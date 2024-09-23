@@ -16,7 +16,7 @@ import {
 } from "@mui/icons-material";
 import "./assets/Sidebar.css";
 
-const Sidebar = ({ activePage, handleNavigation, handleLogout }) => {
+const Sidebar = ({ activePage, handleNavigation, handleLogout, username }) => {
   return (
     <div
       className="sidebar text-white p-3 d-flex flex-column"
@@ -25,11 +25,11 @@ const Sidebar = ({ activePage, handleNavigation, handleLogout }) => {
       <div className="user-info text-center mb-4">
         <Avatar
           alt="Logo"
-          src="/icon.svg" // Update to use the logo
+          src="/icon.svg"
           className="mx-auto"
           sx={{ width: 80, height: 80 }}
         />
-        <h5 className="mt-2">Nama User</h5>
+        <h5 className="mt-2">{username}</h5>
       </div>
 
       <List>

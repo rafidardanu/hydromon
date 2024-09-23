@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./assets/Dashboard.css";
@@ -6,9 +6,20 @@ import "./assets/Dashboard.css";
 export const Accuracy = () => {
   const navigate = useNavigate();
   const [activePage, setActivePage] = useState("accuracy");
+  const [username, setUsername] = useState("");
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user && user.username) {
+      setUsername(user.username);
+    } else {
+      navigate("/login");
+    }
+  }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token"); // Hapus token
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     navigate("/login");
   };
 
@@ -23,12 +34,12 @@ export const Accuracy = () => {
         activePage={activePage}
         handleNavigation={handleNavigation}
         handleLogout={handleLogout}
+        username={username}
       />
 
       {/* Main Content */}
       <div className="content flex-grow-1 p-2">
         <h1>Accuracy Page</h1>
-        <p>This is where you can display accuracy-related content.</p>
       </div>
     </div>
   );

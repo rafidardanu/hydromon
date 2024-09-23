@@ -16,10 +16,13 @@ const Login = () => {
         username,
         password,
       });
-      console.log("Login successful", response.data);
-      localStorage.setItem("token", response.data.token); // Simpan token
-      setError("");
-      navigate("/dashboard");
+      if (response.data.user) {
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+        console.log("Login successful", response.data);
+        setError("");
+        navigate("/dashboard");
+      }
     } catch (error) {
       setError(error.response?.data?.error || "An error occurred");
     }
