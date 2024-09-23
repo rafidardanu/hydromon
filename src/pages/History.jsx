@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import "./assets/Dashboard.css";
 
-export const Accuracy = () => {
+export const History = () => {
   const navigate = useNavigate();
-  const [activePage, setActivePage] = useState("accuracy");
+  const [activePage, setActivePage] = useState("history");
 
   const handleLogout = () => {
     localStorage.removeItem("token"); // Hapus token
@@ -27,11 +27,11 @@ export const Accuracy = () => {
 
       {/* Main Content */}
       <div className="content flex-grow-1 p-2">
-        <h1>Accuracy Page</h1>
-        <p>This is where you can display accuracy-related content.</p>
+        <h1>History Content</h1>
+        <p>This is the main content area for history.</p>
       </div>
     </div>
   );
 };
 
-export default Accuracy;
+export default History;

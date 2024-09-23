@@ -3,11 +3,14 @@ import {
   RouterProvider,
   Navigate,
 } from "react-router-dom";
+import ProtectedRoute from "./ProtectedRoute";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
-import { Dashboard } from "../pages/Dashboard";
-import ProtectedRoute from "./ProtectedRoute";
+import ForgotPassword from "../pages/ForgotPassword";
+import Dashboard from "../pages/Dashboard";
 import Accuracy from "../pages/Accuracy";
+import History from "../pages/History";
+import Employee from "../pages/Employee";
 
 const router = createBrowserRouter([
   {
@@ -23,6 +26,10 @@ const router = createBrowserRouter([
     element: <Register />,
   },
   {
+    path: "/forgot-password",
+    element: <ForgotPassword />,
+  },
+  {
     path: "/dashboard",
     element: (
       <ProtectedRoute>
@@ -35,6 +42,22 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <Accuracy />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/history",
+    element: (
+      <ProtectedRoute>
+        <History />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/employee",
+    element: (
+      <ProtectedRoute>
+        <Employee />
       </ProtectedRoute>
     ),
   },
