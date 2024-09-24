@@ -11,23 +11,45 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Konfigurasi koneksi database
-const db = mysql.createConnection({
+// Database connection configuration
+const db = mysql.createPool({
   host: process.env.DB_HOST || "localhost",
   user: process.env.DB_USER || "root",
   password: process.env.DB_PASSWORD || "",
   database: process.env.DB_NAME || "hidroponik_monitoring",
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
 
-db.connect((err) => {
-  if (err) {
-    console.error("Error connecting to database:", err);
-    return;
-  }
-  console.log("Connected to database");
+// Middleware to check database connection
+const checkDbConnection = (req, res, next) => {
+  db.getConnection((err, connection) => {
+    if (err) {
+      console.error("Error connecting to the database:", err);
+      return res.status(500).json({ error: "Database connection error" });
+    }
+    connection.release();
+    next();
+  });
+};
+
+// Use the middleware for all routes
+app.use(checkDbConnection);
+
+// API endpoint to check database status
+app.get("/api/db-status", (req, res) => {
+  db.getConnection((err, connection) => {
+    if (err) {
+      console.error("Error connecting to the database:", err);
+      return res.json({ status: "disconnected" });
+    }
+    connection.release();
+    res.json({ status: "connected" });
+  });
 });
 
-// API endpoint untuk login
+// API endpoint for login
 app.post("/api/login", (req, res) => {
   const { username, password } = req.body;
   const query = "SELECT * FROM users WHERE username = ?";
@@ -57,7 +79,7 @@ app.post("/api/login", (req, res) => {
   });
 });
 
-// API endpoint untuk register
+// API endpoint for register
 app.post("/api/register", (req, res) => {
   const { fullname, username, gender, email, telephone, password } = req.body;
 
@@ -80,6 +102,73 @@ app.post("/api/register", (req, res) => {
         res.json({ message: "User registered successfully" });
       }
     );
+  });
+});
+
+// API endpoint for daily chart
+app.get("/api/monitoring/daily", (req, res) => {
+  const query = `
+    SELECT watertemp, waterppm, waterph, airtemp, airhum, timestamp
+    FROM monitoring
+    WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+    ORDER BY timestamp ASC
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      res.status(500).json({ error: "Database error" });
+      return;
+    }
+
+    res.json(results);
+  });
+});
+
+// API endpoint for weekly chart
+app.get("/api/monitoring/weekly", (req, res) => {
+  const query = `
+    SELECT 
+      DATE(timestamp) AS date,
+      AVG(watertemp) AS avg_watertemp,
+      AVG(waterppm) AS avg_waterppm,
+      AVG(waterph) AS avg_waterph,
+      AVG(airtemp) AS avg_airtemp,
+      AVG(airhum) AS avg_airhum
+    FROM monitoring
+    WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+    GROUP BY DATE(timestamp)
+    ORDER BY DATE(timestamp) ASC
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      res.status(500).json({ error: "Database error" });
+      return;
+    }
+
+    res.json(results);
+  });
+});
+
+// API endpoint for actuator status
+app.get("/api/actuator/status", (req, res) => {
+  const query = `
+    SELECT * FROM aktuator
+    ORDER BY timestamp DESC
+    LIMIT 1
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      res.status(500).json({ error: "Database error" });
+      return;
+    }
+
+    if (results.length > 0) {
+      res.json(results[0]);
+    } else {
+      res.status(404).json({ error: "No actuator data found" });
+    }
   });
 });
 
