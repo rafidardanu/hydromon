@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
+import { setAuthToken, removeAuthToken, isTokenExpired } from "../utils/auth";
 import "./assets/LoginRegister.css";
 
 const Login = () => {
@@ -9,6 +10,20 @@ const Login = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const checkTokenExpiration = () => {
+      const token = localStorage.getItem("token");
+      if (token && isTokenExpired(token)) {
+        handleLogout();
+      }
+    };
+
+    checkTokenExpiration();
+    const intervalId = setInterval(checkTokenExpiration, 60000); // check every 60 seconds
+
+    return () => clearInterval(intervalId);
+  }, []);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
@@ -16,8 +31,8 @@ const Login = () => {
         username,
         password,
       });
-      if (response.data.user) {
-        localStorage.setItem("token", response.data.token);
+      if (response.data.token) {
+        setAuthToken(response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.user));
         console.log("Login successful", response.data);
         setError("");
@@ -26,6 +41,12 @@ const Login = () => {
     } catch (error) {
       setError(error.response?.data?.error || "An error occurred");
     }
+  };
+
+  const handleLogout = () => {
+    removeAuthToken();
+    localStorage.removeItem("user");
+    navigate("/login");
   };
 
   return (
@@ -76,16 +97,13 @@ const Login = () => {
                     Login
                   </button>
                   <div className="text-center">
-                    <Link
-                      to="/forgot-password"
-                      className="text-decoration-none"
-                    >
-                      Forget Password?
-                    </Link>
                     <p className="mt-3 mb-0">
-                      Don‵t have an account?{" "}
-                      <Link to="/register" className="text-decoration-none">
-                        Register
+                      Forgot password or need an account? <br />
+                      <Link
+                        to="/contact-admin"
+                        className="text-decoration-none"
+                      >
+                        Contact admin
                       </Link>
                     </p>
                   </div>

@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import Sidebar from "../components/Sidebar";
 import "./assets/LoginRegister.css";
 
-export const Register = () => {
+const Register = () => {
   const [formData, setFormData] = useState({
     fullname: "",
     username: "",
@@ -11,8 +12,10 @@ export const Register = () => {
     email: "",
     telephone: "",
     password: "",
+    role: "user",
   });
   const [error, setError] = useState("");
+  const [activePage, setActivePage] = useState("register");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -24,19 +27,38 @@ export const Register = () => {
     try {
       const response = await axios.post(
         "http://localhost:5000/api/register",
-        formData
+        formData,
+        {
+          headers: { Authorization: localStorage.getItem("token") },
+        }
       );
       console.log("Registration successful", response.data);
       setError("");
-      navigate("/login");
+      navigate("/employee");
     } catch (error) {
       setError(error.response?.data?.error || "An error occurred");
     }
   };
 
+  const handleNavigation = (page) => {
+    setActivePage(page);
+    navigate(`/${page}`);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login");
+  };
+
   return (
-    <div id="register" className="d-flex align-items-center min-vh-100">
-      <div className="container">
+    <div className="dashboard p-5">
+      <Sidebar
+        activePage={activePage}
+        handleNavigation={handleNavigation}
+        handleLogout={handleLogout}
+      />
+      <div className="content flex-grow-1 p-4">
         <div className="row justify-content-center">
           <div className="col-md-8 col-lg-6">
             <div className="card shadow-sm">
@@ -48,7 +70,7 @@ export const Register = () => {
                     className="mb-3"
                     style={{ width: "80px" }}
                   />
-                  <h2 className="fw-bold text-primary">Register Account</h2>
+                  <h2 className="fw-bold text-primary">Register New User</h2>
                 </div>
                 <form onSubmit={handleRegister}>
                   <div className="mb-3">
@@ -92,7 +114,7 @@ export const Register = () => {
                         onChange={handleChange}
                         required
                       >
-                        <option disabled value="">
+                        <option value="" disabled>
                           Choose
                         </option>
                         <option value="Male">Laki-laki</option>
@@ -142,18 +164,26 @@ export const Register = () => {
                       required
                     />
                   </div>
+                  <div className="mb-3">
+                    <label htmlFor="role" className="form-label">
+                      Role
+                    </label>
+                    <select
+                      className="form-select"
+                      id="role"
+                      name="role"
+                      value={formData.role}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="user">User</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
                   {error && <div className="alert alert-danger">{error}</div>}
                   <button type="submit" className="btn btn-primary w-100 mb-3">
                     Register
                   </button>
-                  <div className="text-center">
-                    <p className="mb-0">
-                      Already have an account?{" "}
-                      <Link to="/login" className="text-decoration-none">
-                        Login
-                      </Link>
-                    </p>
-                  </div>
                 </form>
               </div>
             </div>

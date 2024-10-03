@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import { useState, forwardRef } from "react";
 import {
   Avatar,
   List,
@@ -6,6 +7,13 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Button,
+  Slide,
 } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
@@ -13,10 +21,70 @@ import {
   People as PeopleIcon,
   Logout as LogoutIcon,
   TrendingUp as AccuracyIcon,
+  PersonAdd as RegisterIcon,
+  Warning as WarningIcon,
 } from "@mui/icons-material";
 import "./assets/Sidebar.css";
 
+const Transition = forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
+
+const LogoutDialog = ({ open, handleClose, handleConfirm }) => (
+  <Dialog
+    open={open}
+    TransitionComponent={Transition}
+    keepMounted
+    onClose={handleClose}
+    aria-describedby="alert-dialog-slide-description"
+  >
+    <DialogTitle>{"Confirm Logout"}</DialogTitle>
+    <DialogContent>
+      <DialogContentText id="alert-dialog-slide-description">
+        <WarningIcon sx={{ color: "orange", mr: 1, verticalAlign: "middle" }} />
+        Are you sure you want to log out?
+      </DialogContentText>
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={handleClose} color="primary">
+        Cancel
+      </Button>
+      <Button onClick={handleConfirm} color="primary" autoFocus>
+        Logout
+      </Button>
+    </DialogActions>
+  </Dialog>
+);
+
 const Sidebar = ({ activePage, handleNavigation, handleLogout, username }) => {
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  const openLogoutDialog = () => {
+    setLogoutDialogOpen(true);
+  };
+
+  const closeLogoutDialog = () => {
+    setLogoutDialogOpen(false);
+  };
+
+  const confirmLogout = () => {
+    closeLogoutDialog();
+    handleLogout();
+  };
+
+  const menuItems = [
+    { name: "dashboard", icon: DashboardIcon, label: "Dashboard" },
+    { name: "accuracy", icon: AccuracyIcon, label: "Accuracy" },
+    { name: "history", icon: HistoryIcon, label: "History" },
+    { name: "employee", icon: PeopleIcon, label: "Employee" }
+  ];
+
+  // Add Employee menu item for admin only
+  if (user.role === "admin") {
+    menuItems.push({ name: "register", icon: RegisterIcon, label: "Register" });
+  }
+
   return (
     <div
       className="sidebar text-white p-3 d-flex flex-column"
@@ -26,64 +94,31 @@ const Sidebar = ({ activePage, handleNavigation, handleLogout, username }) => {
         <Avatar
           alt="Logo"
           src="/icon.svg"
-          className="mx-auto"
+          className="mx-auto mb-2"
           sx={{ width: 80, height: 80 }}
         />
-        <h5 className="mt-2">{username}</h5>
+        <h4>{username}</h4>
+        <p className="fst-italic">
+          {user.role === "admin" ? "Admin" : "Farmer"}
+        </p>
       </div>
 
       <List>
-        <ListItem
-          button
-          onClick={() => handleNavigation("dashboard")}
-          className={`text-white list-item-vertical ${
-            activePage === "dashboard" ? "active" : ""
-          }`}
-        >
-          <ListItemIcon className="ps-2">
-            <DashboardIcon sx={{ color: "white", fontSize: 40 }} />
-          </ListItemIcon>
-          <ListItemText primary="Dashboard" />
-        </ListItem>
-
-        <ListItem
-          button
-          onClick={() => handleNavigation("accuracy")}
-          className={`text-white list-item-vertical ${
-            activePage === "accuracy" ? "active" : ""
-          }`}
-        >
-          <ListItemIcon className="ps-2">
-            <AccuracyIcon sx={{ color: "white", fontSize: 40 }} />
-          </ListItemIcon>
-          <ListItemText primary="Accuracy" />
-        </ListItem>
-
-        <ListItem
-          button
-          onClick={() => handleNavigation("history")}
-          className={`text-white list-item-vertical ${
-            activePage === "history" ? "active" : ""
-          }`}
-        >
-          <ListItemIcon className="ps-2">
-            <HistoryIcon sx={{ color: "white", fontSize: 40 }} />
-          </ListItemIcon>
-          <ListItemText primary="History" />
-        </ListItem>
-
-        <ListItem
-          button
-          onClick={() => handleNavigation("employee")}
-          className={`text-white list-item-vertical ${
-            activePage === "employee" ? "active" : ""
-          }`}
-        >
-          <ListItemIcon className="ps-2">
-            <PeopleIcon sx={{ color: "white", fontSize: 40 }} />
-          </ListItemIcon>
-          <ListItemText primary="Employee" />
-        </ListItem>
+        {menuItems.map((item) => (
+          <ListItem
+            button
+            key={item.name}
+            onClick={() => handleNavigation(item.name)}
+            className={`text-white list-item-vertical ${
+              activePage === item.name ? "active" : ""
+            }`}
+          >
+            <ListItemIcon className="ps-2">
+              <item.icon sx={{ color: "white", fontSize: 40 }} />
+            </ListItemIcon>
+            <ListItemText primary={item.label} />
+          </ListItem>
+        ))}
       </List>
 
       <div style={{ flexGrow: 1 }} />
@@ -93,7 +128,7 @@ const Sidebar = ({ activePage, handleNavigation, handleLogout, username }) => {
       <List>
         <ListItem
           button
-          onClick={handleLogout}
+          onClick={openLogoutDialog}
           className="text-white list-item-vertical"
         >
           <ListItemIcon className="ps-2">
@@ -102,6 +137,12 @@ const Sidebar = ({ activePage, handleNavigation, handleLogout, username }) => {
           <ListItemText primary="Logout" />
         </ListItem>
       </List>
+
+      <LogoutDialog
+        open={logoutDialogOpen}
+        handleClose={closeLogoutDialog}
+        handleConfirm={confirmLogout}
+      />
     </div>
   );
 };

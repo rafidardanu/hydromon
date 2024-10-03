@@ -12,7 +12,6 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
-import "./assets/Dashboard.css";
 
 export const Dashboard = () => {
   const navigate = useNavigate();
@@ -99,14 +98,44 @@ export const Dashboard = () => {
     navigate(`/${page}`);
   };
 
-  // Dummy data for the cards
-  const cardData = {
-    watertemp: 31,
-    waterph: 6.8,
-    waterppm: 750,
-    airtemp: 34,
-    airhum: 45,
-  };
+  const [cardData, setCardData] = useState({
+    watertemp: 0,
+    waterph: 0,
+    waterppm: 0,
+    airtemp: 0,
+    airhum: 0,
+  });
+
+  useEffect(() => {
+    // Membuka koneksi WebSocket
+    const ws = new WebSocket("ws://localhost:8081");
+
+    ws.onopen = () => {
+      console.log("Connected to WebSocket");
+    };
+
+    ws.onmessage = (event) => {
+      const mqttData = JSON.parse(event.data); // Parsing JSON data yang diterima dari backend
+      console.log("Data received from WebSocket: ", mqttData);
+
+      // Update cardData dengan data yang diterima dari MQTT melalui WebSocket
+      setCardData({
+        watertemp: mqttData.watertemp || cardData.watertemp,
+        waterph: mqttData.waterph || cardData.waterph,
+        waterppm: mqttData.waterppm || cardData.waterppm,
+        airtemp: mqttData.airtemp || cardData.airtemp,
+        airhum: mqttData.airhum || cardData.airhum,
+      });
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket connection closed");
+    };
+
+    return () => {
+      ws.close(); // Menutup koneksi WebSocket saat komponen di-unmount
+    };
+  }, []);
 
   return (
     <div className="dashboard d-flex">

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
-import "./assets/Dashboard.css";
 
 export const History = () => {
   const navigate = useNavigate();
