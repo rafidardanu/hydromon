@@ -15,6 +15,12 @@ import {
   IconButton,
   Tooltip,
   Pagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import {
@@ -27,7 +33,7 @@ import {
 } from "@mui/icons-material";
 import Sidebar from "../components/Sidebar";
 
-// Styled components untuk table
+// Styled components for table
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   fontWeight: "bold",
   background: "#4CAF50",
@@ -51,31 +57,31 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 }));
 
 const Employee = () => {
-  // State management and fetch logic
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [activePage, setActivePage] = useState("employee");
   const [username, setUsername] = useState("");
   const [page, setPage] = useState(1);
-  const [rowsPerPage] = useState(5);
+  const [rowsPerPage] = useState(9);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState(null);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [deletingEmployee, setDeletingEmployee] = useState(null);
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem("user"));
 
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        const response = await axios.get(
-          "http://localhost:5000/api/employees",
-          {
-            headers: { Authorization: localStorage.getItem("token") },
-          }
-        );
-        setFilteredEmployees(response.data);
-      } catch (error) {
-        console.error("Error fetching employees:", error);
-      }
-    };
+  const fetchEmployees = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/employees", {
+        headers: { Authorization: localStorage.getItem("token") },
+      });
+      setFilteredEmployees(response.data);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+    }
+  };
 
+  useEffect(() => {
     if (user && user.username) {
       setUsername(user.username);
       fetchEmployees();
@@ -99,6 +105,66 @@ const Employee = () => {
     setPage(newPage);
   };
 
+  const handleEditClick = (employee) => {
+    setEditingEmployee(employee);
+    setOpenEditDialog(true);
+  };
+
+  const handleEditClose = () => {
+    setOpenEditDialog(false);
+    setEditingEmployee(null);
+  };
+
+const handleEditSave = async () => {
+  try {
+    const response = await axios.put(
+      `http://localhost:5000/api/employees/${editingEmployee.id}`,
+      {
+        fullname: editingEmployee.fullname,
+        email: editingEmployee.email,
+        telephone: editingEmployee.telephone,
+      },
+      {
+        headers: { Authorization: localStorage.getItem("token") },
+      }
+    );
+    if (response.data.message === "Employee updated successfully") {
+      await fetchEmployees();
+      handleEditClose();
+    }
+  } catch (error) {
+    console.error(
+      "Error updating employee:",
+      error.response ? error.response.data : error.message
+    );
+  }
+};
+
+  const handleDeleteClick = (employee) => {
+    setDeletingEmployee(employee);
+    setOpenDeleteDialog(true);
+  };
+
+  const handleDeleteClose = () => {
+    setOpenDeleteDialog(false);
+    setDeletingEmployee(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await axios.delete(
+        `http://localhost:5000/api/employees/${deletingEmployee.id}`,
+        {
+          headers: { Authorization: localStorage.getItem("token") },
+        }
+      );
+      await fetchEmployees();
+      handleDeleteClose();
+    } catch (error) {
+      console.error("Error deleting employee:", error);
+    }
+  };
+
   return (
     <div className="dashboard d-flex">
       <Sidebar
@@ -109,11 +175,7 @@ const Employee = () => {
       />
 
       <div className="content flex-grow-1 p-3">
-        <Typography
-          variant="h4"
-          gutterBottom
-          className="fw-bold text-success"
-        >
+        <Typography variant="h4" gutterBottom className="fw-bold text-success">
           Employee Directory
         </Typography>
 
@@ -187,13 +249,19 @@ const Employee = () => {
                     )}
                     <TableCell>
                       <Tooltip title="Edit">
-                        <IconButton size="small">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleEditClick(employee)}
+                        >
                           <EditIcon color="primary" />
                         </IconButton>
                       </Tooltip>
                       {user.role === "admin" && (
                         <Tooltip title="Delete">
-                          <IconButton size="small">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteClick(employee)}
+                          >
                             <DeleteIcon color="error" />
                           </IconButton>
                         </Tooltip>
@@ -205,15 +273,88 @@ const Employee = () => {
           </Table>
         </TableContainer>
 
-        <Box display="flex" justifyContent="center" mt={3}>
+        <Box display="flex" justifyContent="center" mt={4}>
           <Pagination
             count={Math.ceil(filteredEmployees.length / rowsPerPage)}
             page={page}
             onChange={handleChangePage}
-            color="light"
+            color="secondary-emphasis"
             className="custom-pagination"
           />
         </Box>
+
+        {/* Edit Dialog */}
+        <Dialog open={openEditDialog} onClose={handleEditClose}>
+          <DialogTitle>Edit Employee</DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Full Name"
+              type="text"
+              fullWidth
+              value={editingEmployee?.fullname || ""}
+              onChange={(e) =>
+                setEditingEmployee({
+                  ...editingEmployee,
+                  fullname: e.target.value,
+                })
+              }
+            />
+            <TextField
+              margin="dense"
+              label="Email"
+              type="email"
+              fullWidth
+              value={editingEmployee?.email || ""}
+              onChange={(e) =>
+                setEditingEmployee({
+                  ...editingEmployee,
+                  email: e.target.value,
+                })
+              }
+            />
+            <TextField
+              margin="dense"
+              label="Telephone"
+              type="tel"
+              fullWidth
+              value={editingEmployee?.telephone || ""}
+              onChange={(e) =>
+                setEditingEmployee({
+                  ...editingEmployee,
+                  telephone: e.target.value,
+                })
+              }
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleEditClose} color="secondary-emphasis">
+              Cancel
+            </Button>
+            <Button onClick={handleEditSave} color="primary">
+              Save
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={openDeleteDialog} onClose={handleDeleteClose}>
+          <DialogTitle>Confirm Delete</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Do you really want to delete <b>{deletingEmployee?.fullname}</b>?
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleDeleteClose} color="secondary-emphasis">
+              Cancel
+            </Button>
+            <Button onClick={handleDeleteConfirm} color="error">
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
       </div>
     </div>
   );

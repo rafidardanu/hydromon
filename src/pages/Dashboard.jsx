@@ -1,7 +1,18 @@
-import { useState, useEffect, useCallback } from "react";
+/* eslint-disable react/prop-types */
+/* eslint-disable no-unused-vars */
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import Sidebar from "../components/Sidebar";
+import {
+  Typography,
+  Box,
+  Paper,
+  Grid,
+  Card,
+  CardContent,
+  Chip,
+} from "@mui/material";
+import { styled } from "@mui/material/styles";
 import {
   LineChart,
   Line,
@@ -12,6 +23,54 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
+import Sidebar from "../components/Sidebar";
+
+// Styled components (unchanged)
+const StyledCard = styled(Card)(({ theme }) => ({
+  transition: "all 0.3s",
+  "&:hover": {
+    transform: "scale(1.05)",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+  },
+}));
+
+const StyledChip = styled(Chip)(({ theme }) => ({
+  fontSize: "1.2rem",
+  padding: "20px 10px",
+  borderRadius: "10px",
+  fontWeight: "bold",
+}));
+
+const MetricValue = styled(Typography)(({ theme }) => ({
+  fontFamily: "'Roboto Mono', monospace",
+  fontSize: "3rem",
+  fontWeight: "bold",
+  textAlign: "center",
+  marginTop: theme.spacing(2),
+}));
+
+// Metric configurations (unchanged)
+const metricConfigs = {
+  watertemp: { unit: "°C", label: "Water Temperature" },
+  waterph: { unit: "pH", label: "Water pH" },
+  waterppm: { unit: "ppm", label: "Water PPM" },
+  airtemp: { unit: "°C", label: "Air Temperature" },
+  airhum: { unit: "%", label: "Air Humidity" },
+};
+
+// Metric Card Component (unchanged)
+const MetricCard = ({ value, unit, label, color }) => (
+  <StyledCard>
+    <CardContent>
+      <Typography variant="h6" align="center" gutterBottom>
+        {label}
+      </Typography>
+      <MetricValue style={{ color }}>
+        {value} {unit}
+      </MetricValue>
+    </CardContent>
+  </StyledCard>
+);
 
 export const Dashboard = () => {
   const navigate = useNavigate();
@@ -20,12 +79,35 @@ export const Dashboard = () => {
   const [dailyData, setDailyData] = useState([]);
   const [weeklyData, setWeeklyData] = useState([]);
   const [dbStatus, setDbStatus] = useState("checking");
+  const [mqttStatus, setMqttStatus] = useState("disconnected");
+  const [deviceStatus, setDeviceStatus] = useState("disconnected");
+  const [lastDataReceived, setLastDataReceived] = useState(() => {
+    const savedTimestamp = localStorage.getItem("lastDataTimestamp");
+    return savedTimestamp ? new Date(parseInt(savedTimestamp)) : null;
+  });
+  const [cardData, setCardData] = useState(() => {
+    const savedData = localStorage.getItem("lastMetricData");
+    return savedData
+      ? JSON.parse(savedData)
+      : {
+          watertemp: 0,
+          waterph: 0,
+          waterppm: 0,
+          airtemp: 0,
+          airhum: 0,
+        };
+  });
 
-  // Fungsi untuk fetch data harian
+  const wsRef = useRef(null);
+
+  // Fetch data functions (unchanged)
   const fetchDailyData = useCallback(async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/monitoring/daily"
+        "http://localhost:5000/api/monitoring/daily",
+        {
+          headers: { Authorization: localStorage.getItem("token") },
+        }
       );
       setDailyData(response.data);
     } catch (error) {
@@ -33,11 +115,13 @@ export const Dashboard = () => {
     }
   }, []);
 
-  // Fungsi untuk fetch data mingguan
   const fetchWeeklyData = useCallback(async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/monitoring/weekly"
+        "http://localhost:5000/api/monitoring/weekly",
+        {
+          headers: { Authorization: localStorage.getItem("token") },
+        }
       );
       setWeeklyData(response.data);
     } catch (error) {
@@ -45,7 +129,6 @@ export const Dashboard = () => {
     }
   }, []);
 
-  // Fungsi untuk mengecek status database
   const checkDbStatus = useCallback(async () => {
     try {
       const response = await axios.get("http://localhost:5000/api/db-status");
@@ -53,7 +136,6 @@ export const Dashboard = () => {
       setDbStatus(status);
 
       if (status === "connected") {
-        // Jika status terhubung, fetch ulang data
         fetchDailyData();
         fetchWeeklyData();
       }
@@ -63,6 +145,51 @@ export const Dashboard = () => {
     }
   }, [fetchDailyData, fetchWeeklyData]);
 
+  // WebSocket connection function (updated to save timestamp)
+  const connectWebSocket = useCallback(() => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      return;
+    }
+
+    const ws = new WebSocket("ws://localhost:8081");
+
+    ws.onopen = () => {
+      console.log("Connected to WebSocket");
+      setMqttStatus("connected");
+    };
+
+    ws.onmessage = (event) => {
+      const mqttData = JSON.parse(event.data);
+      console.log("Data received from WebSocket: ", mqttData);
+
+      const newCardData = {
+        ...cardData,
+        ...Object.fromEntries(
+          Object.entries(mqttData).map(([key, value]) => [key, Number(value)])
+        ),
+      };
+
+      setCardData(newCardData);
+      localStorage.setItem("lastMetricData", JSON.stringify(newCardData));
+
+      const currentTimestamp = new Date();
+      setLastDataReceived(currentTimestamp);
+      localStorage.setItem("lastDataTimestamp", currentTimestamp.getTime().toString());
+
+      setDeviceStatus("connected");
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket connection closed");
+      setMqttStatus("disconnected");
+      wsRef.current = null;
+      setTimeout(connectWebSocket, 5000);
+    };
+
+    wsRef.current = ws;
+  }, [cardData]);
+
+  // Effects (unchanged)
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (user && user.username) {
@@ -71,21 +198,42 @@ export const Dashboard = () => {
       navigate("/login");
     }
 
-    // Jalankan fungsi-fungsi secara periodik
     fetchDailyData();
     fetchWeeklyData();
     checkDbStatus();
 
-    const dailyInterval = setInterval(fetchDailyData, 60000); // Perbarui data harian setiap menit
-    const weeklyInterval = setInterval(fetchWeeklyData, 300000); // Perbarui data mingguan setiap 5 menit
-    const statusInterval = setInterval(checkDbStatus, 5000); // Cek status database setiap 5 detik
+    const dailyInterval = setInterval(fetchDailyData, 60000);
+    const weeklyInterval = setInterval(fetchWeeklyData, 300000);
+    const statusInterval = setInterval(checkDbStatus, 5000);
+
+    connectWebSocket();
+
+    const checkDeviceStatus = setInterval(() => {
+      if (lastDataReceived) {
+        const timeSinceLastData = new Date() - lastDataReceived;
+        if (timeSinceLastData > 5000) {
+          setDeviceStatus("disconnected");
+        }
+      }
+    }, 1000);
 
     return () => {
       clearInterval(dailyInterval);
       clearInterval(weeklyInterval);
       clearInterval(statusInterval);
+      clearInterval(checkDeviceStatus);
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
     };
-  }, [navigate, fetchDailyData, fetchWeeklyData, checkDbStatus]);
+  }, [
+    navigate,
+    fetchDailyData,
+    fetchWeeklyData,
+    checkDbStatus,
+    connectWebSocket,
+    lastDataReceived,
+  ]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -98,44 +246,81 @@ export const Dashboard = () => {
     navigate(`/${page}`);
   };
 
-  const [cardData, setCardData] = useState({
-    watertemp: 0,
-    waterph: 0,
-    waterppm: 0,
-    airtemp: 0,
-    airhum: 0,
-  });
+  const renderLineChart = (data, title) => (
+    <Paper elevation={6} style={{ borderRadius: 15, padding: "20px" }}>
+      <Typography variant="h6" gutterBottom>
+        {title}
+      </Typography>
+      <ResponsiveContainer width="100%" height={350}>
+        <LineChart data={data}>
+          <XAxis
+            dataKey={title === "Daily Chart" ? "hour" : "date"}
+            tickFormatter={(value) =>
+              title === "Daily Chart"
+                ? `${value}:00`
+                : new Date(value).toLocaleDateString()
+            }
+          />
+          <YAxis tickFormatter={(value) => Number(value)} />
+          <Tooltip
+            labelFormatter={(label) =>
+              title === "Daily Chart"
+                ? `${label}:00`
+                : new Date(label).toLocaleString()
+            }
+            formatter={(value, name) => {
+              const metricKey = name.split("_")[1];
+              const config = metricConfigs[metricKey] || {};
+              return [
+                `${Number(value).toFixed(1)}${config.unit || ""}`,
+                config.label || name,
+              ];
+            }}
+          />
+          <Legend
+            formatter={(value) => {
+              const config = metricConfigs[value] || {};
+              return config.label || value;
+            }}
+          />
+          <CartesianGrid strokeDasharray="3 3" />
+          {Object.keys(metricConfigs).map((key) => (
+            <Line
+              key={key}
+              type="monotone"
+              dataKey={`avg_${key}`}
+              name={key}
+              stroke={getLineColor(key)}
+              connectNulls
+            />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+    </Paper>
+  );
 
-  useEffect(() => {
-    // Membuka koneksi WebSocket
-    const ws = new WebSocket("ws://localhost:8081");
-
-    ws.onopen = () => {
-      console.log("Connected to WebSocket");
+  const getLineColor = (key) => {
+    const colors = {
+      watertemp: "#8884d8",
+      waterph: "#ffc658",
+      waterppm: "#82ca9d",
+      airtemp: "#ff7300",
+      airhum: "#413ea0",
     };
+    return colors[key] || "#000000";
+  };
 
-    ws.onmessage = (event) => {
-      const mqttData = JSON.parse(event.data); // Parsing JSON data yang diterima dari backend
-      console.log("Data received from WebSocket: ", mqttData);
-
-      // Update cardData dengan data yang diterima dari MQTT melalui WebSocket
-      setCardData({
-        watertemp: mqttData.watertemp || cardData.watertemp,
-        waterph: mqttData.waterph || cardData.waterph,
-        waterppm: mqttData.waterppm || cardData.waterppm,
-        airtemp: mqttData.airtemp || cardData.airtemp,
-        airhum: mqttData.airhum || cardData.airhum,
-      });
-    };
-
-    ws.onclose = () => {
-      console.log("WebSocket connection closed");
-    };
-
-    return () => {
-      ws.close(); // Menutup koneksi WebSocket saat komponen di-unmount
-    };
-  }, []);
+  const formatLastUpdate = (date) => {
+    if (!date) return "No data yet";
+    return date.toLocaleString("en-US", {
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+  };
 
   return (
     <div className="dashboard d-flex">
@@ -145,169 +330,90 @@ export const Dashboard = () => {
         handleLogout={handleLogout}
         username={username}
       />
-      <div className="content flex-grow-1 p-4">
-        <div className="row mb-4">
-          <div className="col">
-            <div className="card">
-              <div className="card-body">
-                <h5 className="card-title">Tahap - 3</h5>
-                <p className="card-text">Day - 43</p>
-              </div>
-            </div>
-          </div>
+      <Box className="content flex-grow-1 p-4">
+        <Typography
+          variant="h4"
+          gutterBottom
+          className="fw-bold text-success mb-4"
+        >
+          Dashboard
+        </Typography>
+
+        <Grid container spacing={3} className="mb-4">
+          <Grid item xs={12} sm={4} md={2}>
+            <StyledCard>
+              <CardContent>
+                <Typography variant="h6">Tahap - 3</Typography>
+                <Typography variant="body1">Day - 43</Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Last Update: {formatLastUpdate(lastDataReceived)}
+                </Typography>
+              </CardContent>
+            </StyledCard>
+          </Grid>
           {Object.entries(cardData).map(([key, value]) => (
-            <div className="col" key={key}>
-              <div className="card">
-                <div className="card-body">
-                  <h2 className="card-title text-center">{value}</h2>
-                  <p className="card-text text-center">
-                    {key.charAt(0).toUpperCase() +
-                      key.slice(1).replace(/([A-Z])/g, " $1")}
-                  </p>
-                </div>
-              </div>
-            </div>
+            <Grid item xs={12} sm={4} md={2} key={key}>
+              <MetricCard
+                value={Number(value)}
+                unit={metricConfigs[key].unit}
+                label={metricConfigs[key].label}
+                color={getLineColor(key)}
+              />
+            </Grid>
           ))}
-        </div>
+        </Grid>
 
-        {/* Chart Harian */}
-        <div className="row mb-4">
-          <div className="col-md-6">
-            <div className="card">
-              <div className="card-body">
-                <h5 className="card-title mb-5">Daily Chart</h5>
-                <ResponsiveContainer width="100%" height={350}>
-                  <LineChart data={dailyData}>
-                    <XAxis
-                      dataKey="timestamp"
-                      tickFormatter={(timestamp) =>
-                        new Date(timestamp).toLocaleTimeString()
-                      }
-                    />
-                    <YAxis />
-                    <Tooltip
-                      labelFormatter={(label) =>
-                        new Date(label).toLocaleString()
-                      }
-                    />
-                    <Legend />
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <Line
-                      type="monotone"
-                      dataKey="watertemp"
-                      name="Water Temp"
-                      stroke="#8884d8"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="waterph"
-                      name="Water pH"
-                      stroke="#ffc658"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="waterppm"
-                      name="Water PPM"
-                      stroke="#82ca9d"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="airtemp"
-                      name="Air Temp"
-                      stroke="#ff7300"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="airhum"
-                      name="Air Humidity"
-                      stroke="#413ea0"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
+        {/* Daily and Weekly charts */}
+        <Grid container spacing={3} className="mb-4">
+          <Grid item xs={12} md={6}>
+            {renderLineChart(dailyData, "Daily Chart")}
+          </Grid>
+          <Grid item xs={12} md={6}>
+            {renderLineChart(weeklyData, "Weekly Chart")}
+          </Grid>
+        </Grid>
 
-          {/* Chart Mingguan */}
-          <div className="col-md-6">
-            <div className="card">
-              <div className="card-body">
-                <h5 className="card-title mb-5">Weekly Chart</h5>
-                <ResponsiveContainer width="100%" height={350}>
-                  <LineChart data={weeklyData}>
-                    <XAxis
-                      dataKey="date"
-                      tickFormatter={(date) =>
-                        new Date(date).toLocaleDateString()
-                      }
-                    />
-                    <YAxis />
-                    <Tooltip
-                      labelFormatter={(label) =>
-                        new Date(label).toLocaleString()
-                      }
-                    />
-                    <Legend />
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <Line
-                      type="monotone"
-                      dataKey="avg_watertemp"
-                      name="Water Temp"
-                      stroke="#8884d8"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="avg_waterph"
-                      name="Water pH"
-                      stroke="#ffc658"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="avg_waterppm"
-                      name="Water PPM"
-                      stroke="#82ca9d"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="avg_airtemp"
-                      name="Air Temp"
-                      stroke="#ff7300"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="avg_airhum"
-                      name="Air Humidity"
-                      stroke="#413ea0"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Status Database */}
-        <div className="card bg-white mb-4">
-          <div className="card-body">
-            <h5 className="card-title">Database Status</h5>
-            <p className="card-text">
-              <span
-                className={`badge ${
-                  dbStatus === "connected" ? "bg-success" : "bg-danger"
-                }`}
-                style={{
-                  fontSize: "1.2rem",
-                  padding: "10px 20px",
-                  borderRadius: "15px",
-                  fontWeight: "bold",
-                }}
-              >
-                {dbStatus === "connected" ? "Connected" : "Disconnected"}
-              </span>
-            </p>
-          </div>
-        </div>
-      </div>
+        {/* Status indicators */}
+        <Grid container spacing={3} className="mb-4">
+          <Grid item xs={12} sm={4}>
+            <Paper elevation={6} style={{ borderRadius: 15, padding: "20px" }}>
+              <Typography variant="h6" gutterBottom>
+                Database Status
+              </Typography>
+              <StyledChip
+                label={dbStatus === "connected" ? "Connected" : "Disconnected"}
+                color={dbStatus === "connected" ? "success" : "error"}
+              />
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Paper elevation={6} style={{ borderRadius: 15, padding: "20px" }}>
+              <Typography variant="h6" gutterBottom>
+                MQTT Status
+              </Typography>
+              <StyledChip
+                label={
+                  mqttStatus === "connected" ? "Connected" : "Disconnected"
+                }
+                color={mqttStatus === "connected" ? "success" : "error"}
+              />
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Paper elevation={6} style={{ borderRadius: 15, padding: "20px" }}>
+              <Typography variant="h6" gutterBottom>
+                Device Status
+              </Typography>
+              <StyledChip
+                label={
+                  deviceStatus === "connected" ? "Connected" : "Disconnected"
+                }
+                color={deviceStatus === "connected" ? "success" : "error"}
+              />
+            </Paper>
+          </Grid>
+        </Grid>
+      </Box>
     </div>
   );
 };

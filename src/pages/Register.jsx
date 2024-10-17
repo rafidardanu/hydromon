@@ -58,22 +58,22 @@ const Register = () => {
         handleNavigation={handleNavigation}
         handleLogout={handleLogout}
       />
-      <div className="content flex-grow-1 p-4">
+      <div className="content flex-grow-1 ">
         <div className="row justify-content-center">
           <div className="col-md-8 col-lg-6">
             <div className="card shadow-sm">
               <div className="card-body p-5">
-                <div className="text-center mb-4">
+                <div className="text-center mb-5">
                   <img
                     src="/icon.svg"
                     alt="Taman Herbal Lawu"
-                    className="mb-3"
+                    className="mb-4"
                     style={{ width: "80px" }}
                   />
                   <h2 className="fw-bold text-primary">Register New User</h2>
                 </div>
                 <form onSubmit={handleRegister}>
-                  <div className="mb-3">
+                  <div className="mb-2">
                     <label htmlFor="fullname" className="form-label">
                       Full Name
                     </label>
@@ -87,7 +87,7 @@ const Register = () => {
                       required
                     />
                   </div>
-                  <div className="row mb-3">
+                  <div className="row mb-2">
                     <div className="col">
                       <label htmlFor="username" className="form-label">
                         Username
@@ -114,15 +114,15 @@ const Register = () => {
                         onChange={handleChange}
                         required
                       >
-                        <option value="" disabled>
+                        <option value="" disabled defaultValue>
                           Choose
                         </option>
-                        <option value="Male">Laki-laki</option>
-                        <option value="Female">Perempuan</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
                       </select>
                     </div>
                   </div>
-                  <div className="mb-3">
+                  <div className="mb-2">
                     <label htmlFor="email" className="form-label">
                       Email
                     </label>
@@ -136,9 +136,9 @@ const Register = () => {
                       required
                     />
                   </div>
-                  <div className="mb-3">
+                  <div className="mb-2">
                     <label htmlFor="telephone" className="form-label">
-                      Telephone Number
+                      Phone Number
                     </label>
                     <input
                       type="tel"
@@ -150,7 +150,7 @@ const Register = () => {
                       required
                     />
                   </div>
-                  <div className="mb-3">
+                  <div className="mb-2">
                     <label htmlFor="password" className="form-label">
                       Password
                     </label>
@@ -164,7 +164,7 @@ const Register = () => {
                       required
                     />
                   </div>
-                  <div className="mb-3">
+                  <div className="mb-5">
                     <label htmlFor="role" className="form-label">
                       Role
                     </label>
@@ -176,12 +176,12 @@ const Register = () => {
                       onChange={handleChange}
                       required
                     >
-                      <option value="user">User</option>
+                      <option value="farmer">Farmer</option>
                       <option value="admin">Admin</option>
                     </select>
                   </div>
                   {error && <div className="alert alert-danger">{error}</div>}
-                  <button type="submit" className="btn btn-primary w-100 mb-3">
+                  <button type="submit" className="btn btn-primary w-100">
                     Register
                   </button>
                 </form>
