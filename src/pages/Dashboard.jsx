@@ -25,7 +25,6 @@ import {
 } from "recharts";
 import Sidebar from "../components/Sidebar";
 
-// Styled components (unchanged)
 const StyledCard = styled(Card)(({ theme }) => ({
   transition: "all 0.3s",
   "&:hover": {
@@ -49,7 +48,6 @@ const MetricValue = styled(Typography)(({ theme }) => ({
   marginTop: theme.spacing(2),
 }));
 
-// Metric configurations (unchanged)
 const metricConfigs = {
   watertemp: { unit: "°C", label: "Water Temperature" },
   waterph: { unit: "pH", label: "Water pH" },
@@ -58,7 +56,6 @@ const metricConfigs = {
   airhum: { unit: "%", label: "Air Humidity" },
 };
 
-// Metric Card Component (unchanged)
 const MetricCard = ({ value, unit, label, color }) => (
   <StyledCard>
     <CardContent>
@@ -72,7 +69,7 @@ const MetricCard = ({ value, unit, label, color }) => (
   </StyledCard>
 );
 
-export const Dashboard = () => {
+const Dashboard = () => {
   const navigate = useNavigate();
   const [activePage, setActivePage] = useState("dashboard");
   const [username, setUsername] = useState("");
@@ -81,76 +78,55 @@ export const Dashboard = () => {
   const [dbStatus, setDbStatus] = useState("checking");
   const [mqttStatus, setMqttStatus] = useState("disconnected");
   const [deviceStatus, setDeviceStatus] = useState("disconnected");
-  const [lastDataReceived, setLastDataReceived] = useState(() => {
-    const savedTimestamp = localStorage.getItem("lastDataTimestamp");
-    return savedTimestamp ? new Date(parseInt(savedTimestamp)) : null;
-  });
-  const [cardData, setCardData] = useState(() => {
-    const savedData = localStorage.getItem("lastMetricData");
-    return savedData
-      ? JSON.parse(savedData)
-      : {
-          watertemp: 0,
-          waterph: 0,
-          waterppm: 0,
-          airtemp: 0,
-          airhum: 0,
-        };
+  const [cardData, setCardData] = useState({
+    watertemp: 0,
+    waterph: 0,
+    waterppm: 0,
+    airtemp: 0,
+    airhum: 0,
   });
 
-  const wsRef = useRef(null);
+  // Add refs for managing device status check
+  const deviceStatusInterval = useRef(null);
+  const lastDataTimestamp = useRef(null);
 
-  // Fetch data functions (unchanged)
-  const fetchDailyData = useCallback(async () => {
+  const fetchData = useCallback(async (endpoint, setter) => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/monitoring/daily",
+        `http://localhost:5000/api/${endpoint}`,
         {
           headers: { Authorization: localStorage.getItem("token") },
         }
       );
-      setDailyData(response.data);
+      setter(response.data);
     } catch (error) {
-      console.error("Error fetching daily data:", error);
-    }
-  }, []);
-
-  const fetchWeeklyData = useCallback(async () => {
-    try {
-      const response = await axios.get(
-        "http://localhost:5000/api/monitoring/weekly",
-        {
-          headers: { Authorization: localStorage.getItem("token") },
-        }
-      );
-      setWeeklyData(response.data);
-    } catch (error) {
-      console.error("Error fetching weekly data:", error);
+      console.error(`Error fetching ${endpoint} data:`, error);
     }
   }, []);
 
   const checkDbStatus = useCallback(async () => {
     try {
       const response = await axios.get("http://localhost:5000/api/db-status");
-      const status = response.data.status;
-      setDbStatus(status);
-
-      if (status === "connected") {
-        fetchDailyData();
-        fetchWeeklyData();
+      setDbStatus(response.data.status);
+      if (response.data.status === "connected") {
+        fetchData("monitoring/daily", setDailyData);
+        fetchData("monitoring/weekly", setWeeklyData);
       }
     } catch (error) {
       console.error("Error checking DB status:", error);
       setDbStatus("disconnected");
     }
-  }, [fetchDailyData, fetchWeeklyData]);
+  }, [fetchData]);
 
-  // WebSocket connection function (updated to save timestamp)
-  const connectWebSocket = useCallback(() => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      return;
+  // Add function to check device status
+  const checkDeviceStatus = useCallback(() => {
+    const now = Date.now();
+    if (lastDataTimestamp.current && now - lastDataTimestamp.current > 5000) {
+      setDeviceStatus("disconnected");
     }
+  }, []);
 
+  const connectWebSocket = useCallback(() => {
     const ws = new WebSocket("ws://localhost:8081");
 
     ws.onopen = () => {
@@ -160,80 +136,54 @@ export const Dashboard = () => {
 
     ws.onmessage = (event) => {
       const mqttData = JSON.parse(event.data);
-      console.log("Data received from WebSocket: ", mqttData);
-
-      const newCardData = {
-        ...cardData,
+      setCardData((prev) => ({
+        ...prev,
         ...Object.fromEntries(
           Object.entries(mqttData).map(([key, value]) => [key, Number(value)])
         ),
-      };
-
-      setCardData(newCardData);
-      localStorage.setItem("lastMetricData", JSON.stringify(newCardData));
-
-      const currentTimestamp = new Date();
-      setLastDataReceived(currentTimestamp);
-      localStorage.setItem("lastDataTimestamp", currentTimestamp.getTime().toString());
-
+      }));
+      // Update device status and timestamp when data is received
       setDeviceStatus("connected");
+      lastDataTimestamp.current = Date.now();
     };
 
     ws.onclose = () => {
       console.log("WebSocket connection closed");
       setMqttStatus("disconnected");
-      wsRef.current = null;
+      setDeviceStatus("disconnected");
       setTimeout(connectWebSocket, 5000);
     };
 
-    wsRef.current = ws;
-  }, [cardData]);
+    return ws;
+  }, []);
 
-  // Effects (unchanged)
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
-    if (user && user.username) {
+    if (user?.username) {
       setUsername(user.username);
     } else {
       navigate("/login");
     }
 
-    fetchDailyData();
-    fetchWeeklyData();
+    fetchData("monitoring/daily", setDailyData);
+    fetchData("monitoring/weekly", setWeeklyData);
     checkDbStatus();
 
-    const dailyInterval = setInterval(fetchDailyData, 60000);
-    const weeklyInterval = setInterval(fetchWeeklyData, 300000);
-    const statusInterval = setInterval(checkDbStatus, 5000);
+    // Set up intervals for data fetching and status checks
+    const intervals = [
+      setInterval(() => fetchData("monitoring/daily", setDailyData), 60000),
+      setInterval(() => fetchData("monitoring/weekly", setWeeklyData), 300000),
+      setInterval(checkDbStatus, 5000),
+      setInterval(checkDeviceStatus, 1000), // Check device status every second
+    ];
 
-    connectWebSocket();
-
-    const checkDeviceStatus = setInterval(() => {
-      if (lastDataReceived) {
-        const timeSinceLastData = new Date() - lastDataReceived;
-        if (timeSinceLastData > 5000) {
-          setDeviceStatus("disconnected");
-        }
-      }
-    }, 1000);
+    const ws = connectWebSocket();
 
     return () => {
-      clearInterval(dailyInterval);
-      clearInterval(weeklyInterval);
-      clearInterval(statusInterval);
-      clearInterval(checkDeviceStatus);
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
+      intervals.forEach(clearInterval);
+      ws.close();
     };
-  }, [
-    navigate,
-    fetchDailyData,
-    fetchWeeklyData,
-    checkDbStatus,
-    connectWebSocket,
-    lastDataReceived,
-  ]);
+  }, [navigate, fetchData, checkDbStatus, connectWebSocket, checkDeviceStatus]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -241,9 +191,15 @@ export const Dashboard = () => {
     navigate("/login");
   };
 
-  const handleNavigation = (page) => {
-    setActivePage(page);
-    navigate(`/${page}`);
+  const getLineColor = (key) => {
+    const colors = {
+      watertemp: "#8884d8",
+      waterph: "#ffc658",
+      waterppm: "#82ca9d",
+      airtemp: "#ff7300",
+      airhum: "#413ea0",
+    };
+    return colors[key] || "#000000";
   };
 
   const renderLineChart = (data, title) => (
@@ -261,7 +217,7 @@ export const Dashboard = () => {
                 : new Date(value).toLocaleDateString()
             }
           />
-          <YAxis tickFormatter={(value) => Number(value)} />
+          <YAxis />
           <Tooltip
             labelFormatter={(label) =>
               title === "Daily Chart"
@@ -277,12 +233,7 @@ export const Dashboard = () => {
               ];
             }}
           />
-          <Legend
-            formatter={(value) => {
-              const config = metricConfigs[value] || {};
-              return config.label || value;
-            }}
-          />
+          <Legend formatter={(value) => metricConfigs[value]?.label || value} />
           <CartesianGrid strokeDasharray="3 3" />
           {Object.keys(metricConfigs).map((key) => (
             <Line
@@ -299,34 +250,14 @@ export const Dashboard = () => {
     </Paper>
   );
 
-  const getLineColor = (key) => {
-    const colors = {
-      watertemp: "#8884d8",
-      waterph: "#ffc658",
-      waterppm: "#82ca9d",
-      airtemp: "#ff7300",
-      airhum: "#413ea0",
-    };
-    return colors[key] || "#000000";
-  };
-
-  const formatLastUpdate = (date) => {
-    if (!date) return "No data yet";
-    return date.toLocaleString("en-US", {
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    });
-  };
-
   return (
     <div className="dashboard d-flex">
       <Sidebar
         activePage={activePage}
-        handleNavigation={handleNavigation}
+        handleNavigation={(page) => {
+          setActivePage(page);
+          navigate(`/${page}`);
+        }}
         handleLogout={handleLogout}
         username={username}
       />
@@ -345,9 +276,6 @@ export const Dashboard = () => {
               <CardContent>
                 <Typography variant="h6">Tahap - 3</Typography>
                 <Typography variant="body1">Day - 43</Typography>
-                <Typography variant="body2" color="textSecondary">
-                  Last Update: {formatLastUpdate(lastDataReceived)}
-                </Typography>
               </CardContent>
             </StyledCard>
           </Grid>
@@ -363,7 +291,6 @@ export const Dashboard = () => {
           ))}
         </Grid>
 
-        {/* Daily and Weekly charts */}
         <Grid container spacing={3} className="mb-4">
           <Grid item xs={12} md={6}>
             {renderLineChart(dailyData, "Daily Chart")}
@@ -373,45 +300,27 @@ export const Dashboard = () => {
           </Grid>
         </Grid>
 
-        {/* Status indicators */}
         <Grid container spacing={3} className="mb-4">
-          <Grid item xs={12} sm={4}>
-            <Paper elevation={6} style={{ borderRadius: 15, padding: "20px" }}>
-              <Typography variant="h6" gutterBottom>
-                Database Status
-              </Typography>
-              <StyledChip
-                label={dbStatus === "connected" ? "Connected" : "Disconnected"}
-                color={dbStatus === "connected" ? "success" : "error"}
-              />
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Paper elevation={6} style={{ borderRadius: 15, padding: "20px" }}>
-              <Typography variant="h6" gutterBottom>
-                MQTT Status
-              </Typography>
-              <StyledChip
-                label={
-                  mqttStatus === "connected" ? "Connected" : "Disconnected"
-                }
-                color={mqttStatus === "connected" ? "success" : "error"}
-              />
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Paper elevation={6} style={{ borderRadius: 15, padding: "20px" }}>
-              <Typography variant="h6" gutterBottom>
-                Device Status
-              </Typography>
-              <StyledChip
-                label={
-                  deviceStatus === "connected" ? "Connected" : "Disconnected"
-                }
-                color={deviceStatus === "connected" ? "success" : "error"}
-              />
-            </Paper>
-          </Grid>
+          {[
+            { label: "Database Status", status: dbStatus },
+            { label: "MQTT Status", status: mqttStatus },
+            { label: "Device Status", status: deviceStatus },
+          ].map(({ label, status }) => (
+            <Grid item xs={12} sm={4} key={label}>
+              <Paper
+                elevation={6}
+                style={{ borderRadius: 15, padding: "20px" }}
+              >
+                <Typography variant="h6" gutterBottom>
+                  {label}
+                </Typography>
+                <StyledChip
+                  label={status === "connected" ? "Connected" : "Disconnected"}
+                  color={status === "connected" ? "success" : "error"}
+                />
+              </Paper>
+            </Grid>
+          ))}
         </Grid>
       </Box>
     </div>

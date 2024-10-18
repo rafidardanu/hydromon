@@ -8,7 +8,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "node server.js"
+    "start-server": "node src/utils/server.js",
+    "start-mqtt": "node src/utils/mqttsubscribe.cjs",
+    "start": "concurrently \"npm run start-server\" \"npm run start-mqtt\""
   },
   "dependencies": {
     "@emotion/react": "^11.13.3",
