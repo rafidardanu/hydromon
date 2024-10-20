@@ -1,12 +1,10 @@
 const mqtt = require("mqtt");
 const WebSocket = require("ws");
+const dotenv = require("dotenv");
 
-const mqttHost = "broker.emqx.io";
-const protocol = "mqtt";
-const port = "1883";
-const topic = "herbalawu/monitoring";
+dotenv.config();
 
-const wss = new WebSocket.Server({ port: 8081 });
+const wss = new WebSocket.Server({ port: process.env.WS_PORT });
 
 wss.on("connection", (ws) => {
   console.log("WebSocket connection established.");
@@ -17,7 +15,7 @@ wss.on("connection", (ws) => {
 
 function connectToBroker() {
   const clientId = `client${Math.random().toString(36).slice(2, 7)}`;
-  const hostURL = `${protocol}://${mqttHost}:${port}`;
+  const hostURL = `${process.env.MQTT_PROTOCOL}://${process.env.MQTT_HOST}:${process.env.MQTT_PORT}`;
 
   const client = mqtt.connect(hostURL, {
     clientId,
@@ -37,8 +35,8 @@ function connectToBroker() {
   client.on("reconnect", () => console.log("Reconnecting..."));
   client.on("connect", () => {
     console.log("Client connected:", clientId);
-    client.subscribe(topic, { qos: 0 });
-    console.log(`Subscribed to Topic: ${topic}`);
+    client.subscribe(process.env.MQTT_TOPIC, { qos: 0 });
+    console.log(`Subscribed to Topic: ${process.env.MQTT_TOPIC}`);
   });
 
   client.on("message", (topic, message) => {
