@@ -4,6 +4,8 @@ import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import "./assets/LoginRegister.css";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const Register = () => {
   const [formData, setFormData] = useState({
     fullname: "",
@@ -26,7 +28,7 @@ const Register = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/register",
+        `${API_BASE_URL}/register`,
         formData,
         {
           headers: { Authorization: localStorage.getItem("token") },

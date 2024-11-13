@@ -5,6 +5,8 @@ import axios from "axios";
 import { setAuthToken, removeAuthToken, isTokenExpired } from "../utils/auth";
 import "./assets/LoginRegister.css";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -28,10 +30,7 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:5000/api/login", {
-        // const response = await axios.post(
-        //   "https://welcomed-filly-informed.ngrok-free.app/api/v2/auth/login",
-        //   {
+      const response = await axios.post(`${API_BASE_URL}/login`, {
         username,
         password,
       });

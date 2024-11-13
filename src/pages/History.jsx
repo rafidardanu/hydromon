@@ -21,7 +21,8 @@ import { format } from "date-fns";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import Sidebar from "../components/Sidebar";
 
-// Styled components for table
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   fontWeight: "bold",
   background: "#4CAF50",
@@ -92,12 +93,9 @@ const History = () => {
   const fetchAllData = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:5000/api/history/monitoring",
-        {
-          headers: { Authorization: token },
-        }
-      );
+      const response = await axios.get(`${API_BASE_URL}/history/monitoring`, {
+        headers: { Authorization: token },
+      });
       setMonitoringData(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -107,13 +105,10 @@ const History = () => {
   const fetchFilteredData = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:5000/api/history/monitoring",
-        {
-          headers: { Authorization: token },
-          params: { startDate, endDate },
-        }
-      );
+      const response = await axios.get(`${API_BASE_URL}/history/monitoring`, {
+        headers: { Authorization: token },
+        params: { startDate, endDate },
+      });
       setMonitoringData(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);

@@ -27,8 +27,9 @@ import ChemicalIndicator from "../components/dashboard/ChemicalIndicator";
 import PumpIndicator from "../components/dashboard/PumpIndicator";
 import LastUpdate from "../components/dashboard/LastUpdate";
 
-const API_BASE_URL = "http://localhost:5000/api";
-const WS_URL = "ws://localhost:8081";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const WS_URL = import.meta.env.VITE_WS_URL;
+
 
 // Styled Components
 const StyledCard = styled(Card)(() => ({

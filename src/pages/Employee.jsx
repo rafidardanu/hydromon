@@ -33,6 +33,8 @@ import {
 } from "@mui/icons-material";
 import Sidebar from "../components/Sidebar";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 // Styled components for table
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   fontWeight: "bold",
@@ -72,7 +74,7 @@ const Employee = () => {
 
   const fetchEmployees = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/employees", {
+      const response = await axios.get(`${API_BASE_URL}/employees`, {
         headers: { Authorization: localStorage.getItem("token") },
       });
       setFilteredEmployees(response.data);
@@ -118,7 +120,7 @@ const Employee = () => {
 const handleEditSave = async () => {
   try {
     const response = await axios.put(
-      `http://localhost:5000/api/employees/${editingEmployee.id}`,
+      `${API_BASE_URL}/employees/${editingEmployee.id}`,
       {
         fullname: editingEmployee.fullname,
         email: editingEmployee.email,
@@ -153,7 +155,7 @@ const handleEditSave = async () => {
   const handleDeleteConfirm = async () => {
     try {
       await axios.delete(
-        `http://localhost:5000/api/employees/${deletingEmployee.id}`,
+        `${API_BASE_URL}/employees/${deletingEmployee.id}`,
         {
           headers: { Authorization: localStorage.getItem("token") },
         }
