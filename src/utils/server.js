@@ -165,6 +165,22 @@ app.get("/api/employees", verifyToken, (req, res) => {
   });
 });
 
+// API endpoint for setpoints
+app.get("/api/setpoint", verifyToken, (req, res) => {
+  const query = `
+    SELECT id, profile, watertemp, waterppm, waterph, status
+    FROM setpoint
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error("Error fetching setpoint:", err);
+      return res.status(500).json({ error: "Error fetching setpoint" });
+    }
+    res.json(results);
+  });
+});
+
 // API endpoint for daily chart
 app.get("/api/monitoring/daily", verifyToken, (req, res) => {
   const query = `
@@ -247,26 +263,6 @@ app.get("/api/history/monitoring", verifyToken, (req, res) => {
       return res
         .status(500)
         .json({ error: "Error fetching monitoring history" });
-    }
-    res.json(results);
-  });
-});
-
-// API endpoint for actuator history
-app.get("/api/history/actuator", verifyToken, (req, res) => {
-  const { startDate, endDate } = req.query;
-  let query = `
-    SELECT timestamp, actuator_nutrisi, actuator_ph_up, actuator_ph_down, 
-           actuator_air_baku, actuator_pompa_utama_1, actuator_pompa_utama_2
-    FROM aktuator
-    WHERE timestamp BETWEEN ? AND ?
-    ORDER BY timestamp DESC
-  `;
-
-  db.query(query, [startDate, endDate], (err, results) => {
-    if (err) {
-      console.error("Error fetching actuator history:", err);
-      return res.status(500).json({ error: "Error fetching actuator history" });
     }
     res.json(results);
   });

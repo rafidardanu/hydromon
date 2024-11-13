@@ -33,17 +33,27 @@ function connectToBroker() {
   });
 
   client.on("reconnect", () => console.log("Reconnecting..."));
+
   client.on("connect", () => {
     console.log("Client connected:", clientId);
-    client.subscribe(process.env.MQTT_TOPIC, { qos: 0 });
-    console.log(`Subscribed to Topic: ${process.env.MQTT_TOPIC}`);
+    // Subscribe to both monitoring and actuator topics
+    const topics = [process.env.MQTT_TOPIC, process.env.MQTT_ACTUATOR_TOPIC];
+    topics.forEach((topic) => {
+      client.subscribe(topic, { qos: 0 });
+      console.log(`Subscribed to Topic: ${topic}`);
+    });
   });
 
   client.on("message", (topic, message) => {
-    console.log(`Received Message: ${message} on topic: ${topic}`);
+    // console.log(`Received Message: ${message} on topic: ${topic}`);
     wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
-        client.send(message.toString());
+        client.send(
+          JSON.stringify({
+            topic,
+            data: JSON.parse(message.toString()),
+          })
+        );
       }
     });
   });
