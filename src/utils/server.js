@@ -75,18 +75,22 @@ app.post("/api/login", (req, res) => {
   db.query(query, [username], (err, results) => {
     if (err) {
       console.error("Database error during login:", err);
-      return res.status(500).json({ error: "Database error" });
+      return res.status(500).json({
+        error: "Unable to process login request",
+      });
     }
 
     if (results.length === 0) {
-      return res.status(401).json({ error: "Invalid username or password" });
+      return res.status(401).json({ error: "Username not registered" });
     }
 
     const user = results[0];
     bcrypt.compare(password, user.password, (err, match) => {
       if (err) {
         console.error("Error comparing passwords:", err);
-        return res.status(500).json({ error: "Authentication error" });
+        return res.status(500).json({
+          error: "Unable to process login request",
+        });
       }
 
       if (match) {
@@ -101,7 +105,7 @@ app.post("/api/login", (req, res) => {
           token: token,
         });
       } else {
-        res.status(401).json({ error: "Invalid username or password" });
+        res.status(401).json({ error: "Wrong password" });
       }
     });
   });

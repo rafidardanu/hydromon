@@ -18,81 +18,38 @@ export const CHART_COLORS = {
 export const METRIC_CONFIGS = {
   watertemp: {
     unit: "°C",
-    label: "Water Temperature",
+    label: "Water Temp",
     icon: Thermometer,
     color: CHART_COLORS.watertemp,
     chartType: "temperature",
   },
   waterph: {
     unit: "pH",
-    label: "Water pH",
+    label: "pH",
     icon: BeakerIcon,
     color: CHART_COLORS.waterph,
     chartType: "ph",
   },
   waterppm: {
     unit: "ppm",
-    label: "Water PPM",
+    label: "PPM",
     icon: Droplet,
     color: CHART_COLORS.waterppm,
     chartType: "ppm",
   },
   airtemp: {
     unit: "°C",
-    label: "Air Temperature",
+    label: "Air Temp",
     icon: Wind,
     color: CHART_COLORS.airtemp,
     chartType: "temperature",
   },
   airhum: {
     unit: "%",
-    label: "Air Humidity",
+    label: "Humidity",
     icon: Activity,
     color: CHART_COLORS.airhum,
     chartType: "temperature",
-  },
-};
-
-export const ALERT_THRESHOLDS = {
-  watertemp: {
-    min: 20,
-    max: 30,
-    messages: {
-      high: "Water temp is too high!",
-      low: "Water temp is too low!",
-    },
-  },
-  waterph: {
-    min: 5.5,
-    max: 7.0,
-    messages: {
-      high: "Water pH is too high!",
-      low: "Water pH is too low!",
-    },
-  },
-  waterppm: {
-    min: 560,
-    max: 840,
-    messages: {
-      high: "PPM level is too high!",
-      low: "PPM level is too low!",
-    },
-  },
-  airtemp: {
-    min: 20,
-    max: 32,
-    messages: {
-      high: "Air temp is too high!",
-      low: "Air tempy is too low!",
-    },
-  },
-  airhum: {
-    min: 60,
-    max: 80,
-    messages: {
-      high: "Air humidity is too high!",
-      low: "Air humidity is too low!",
-    },
   },
 };
 
@@ -120,6 +77,6 @@ export const STORAGE_KEYS = {
 export const REFRESH_INTERVALS = {
   DAILY_DATA: 60000,
   WEEKLY_DATA: 300000,
-  DB_STATUS: 5000,
+  DB_STATUS: 2000,
   DEVICE_STATUS: 1000,
 };

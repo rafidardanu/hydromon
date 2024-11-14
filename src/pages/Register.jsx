@@ -1,10 +1,61 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import {
+  Box,
+  Container,
+  Paper,
+  Typography,
+  TextField,
+  MenuItem,
+  Button,
+  Alert,
+  Grid,
+  Avatar,
+  IconButton,
+  InputAdornment,
+} from "@mui/material";
+import {
+  Visibility,
+  VisibilityOff,
+} from "@mui/icons-material";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
 import Sidebar from "../components/Sidebar";
-import "./assets/LoginRegister.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// Custom theme with green primary color
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: "#4CAF50",
+      dark: "#45a049",
+    },
+  },
+  components: {
+    MuiTextField: {
+      defaultProps: {
+        variant: "outlined",
+        fullWidth: true,
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: "8px",
+          padding: "12px",
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: "15px",
+        },
+      },
+    },
+  },
+});
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -14,9 +65,11 @@ const Register = () => {
     email: "",
     telephone: "",
     password: "",
-    role: "user",
+    role: "farmer",
   });
+
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [activePage, setActivePage] = useState("register");
   const navigate = useNavigate();
 
@@ -27,13 +80,9 @@ const Register = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/register`,
-        formData,
-        {
-          headers: { Authorization: localStorage.getItem("token") },
-        }
-      );
+      const response = await axios.post(`${API_BASE_URL}/register`, formData, {
+        headers: { Authorization: localStorage.getItem("token") },
+      });
       console.log("Registration successful", response.data);
       setError("");
       navigate("/employee");
@@ -53,146 +102,171 @@ const Register = () => {
     navigate("/login");
   };
 
+  const handleTogglePassword = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
-    <div className="dashboard p-5">
-      <Sidebar
-        activePage={activePage}
-        handleNavigation={handleNavigation}
-        handleLogout={handleLogout}
-      />
-      <div className="content flex-grow-1 ">
-        <div className="row justify-content-center">
-          <div className="col-md-8 col-lg-6">
-            <div className="card shadow-sm">
-              <div className="card-body p-5">
-                <div className="text-center mb-5">
-                  <img
-                    src="/icon.svg"
-                    alt="Taman Herbal Lawu"
-                    className="mb-4"
-                    style={{ width: "80px" }}
-                  />
-                  <h2 className="fw-bold text-primary">Register New User</h2>
-                </div>
-                <form onSubmit={handleRegister}>
-                  <div className="mb-2">
-                    <label htmlFor="fullname" className="form-label">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="fullname"
+    <ThemeProvider theme={theme}>
+      <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f8f9fa" }}>
+        <Sidebar
+          activePage={activePage}
+          handleNavigation={handleNavigation}
+          handleLogout={handleLogout}
+        />
+
+        <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+          <Container maxWidth="md" sx={{ py: 5 }}>
+            <Paper elevation={3} sx={{ p: { xs: 3, md: 5 } }}>
+              <Box
+                component="form"
+                onSubmit={handleRegister}
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 3,
+                }}
+              >
+                <Avatar
+                  src="/icon.svg"
+                  alt="Taman Herbal Lawu"
+                  sx={{ width: 105, height: 79}}
+                />
+
+                <Typography
+                  className="mb-3"
+                  variant="h4"
+                  color="primary"
+                  fontWeight="bold"
+                >
+                  Register New User
+                </Typography>
+
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <TextField
+                      label="Full Name"
                       name="fullname"
                       value={formData.fullname}
                       onChange={handleChange}
                       required
                     />
-                  </div>
-                  <div className="row mb-2">
-                    <div className="col">
-                      <label htmlFor="username" className="form-label">
-                        Username
-                      </label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="username"
-                        name="username"
-                        value={formData.username}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                    <div className="col">
-                      <label htmlFor="gender" className="form-label">
-                        Gender
-                      </label>
-                      <select
-                        className="form-select"
-                        id="gender"
-                        name="gender"
-                        value={formData.gender}
-                        onChange={handleChange}
-                        required
-                      >
-                        <option value="" disabled defaultValue>
-                          Choose
-                        </option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="mb-2">
-                    <label htmlFor="email" className="form-label">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      className="form-control"
-                      id="email"
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Username"
+                      name="username"
+                      value={formData.username}
+                      onChange={handleChange}
+                      required
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      select
+                      label="Gender"
+                      name="gender"
+                      value={formData.gender}
+                      onChange={handleChange}
+                      required
+                    >
+                      <MenuItem value="Male">Male</MenuItem>
+                      <MenuItem value="Female">Female</MenuItem>
+                    </TextField>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      label="Email"
                       name="email"
+                      type="email"
                       value={formData.email}
                       onChange={handleChange}
                       required
                     />
-                  </div>
-                  <div className="mb-2">
-                    <label htmlFor="telephone" className="form-label">
-                      Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      className="form-control"
-                      id="telephone"
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      label="Phone Number"
                       name="telephone"
+                      type="tel"
                       value={formData.telephone}
                       onChange={handleChange}
                       required
                     />
-                  </div>
-                  <div className="mb-2">
-                    <label htmlFor="password" className="form-label">
-                      Password
-                    </label>
-                    <input
-                      type="password"
-                      className="form-control"
-                      id="password"
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      label="Password"
                       name="password"
+                      type={showPassword ? "text" : "password"}
                       value={formData.password}
                       onChange={handleChange}
                       required
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={handleTogglePassword}
+                              edge="end"
+                            >
+                              {showPassword ? (
+                                <VisibilityOff />
+                              ) : (
+                                <Visibility />
+                              )}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
                     />
-                  </div>
-                  <div className="mb-5">
-                    <label htmlFor="role" className="form-label">
-                      Role
-                    </label>
-                    <select
-                      className="form-select"
-                      id="role"
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      select
+                      label="Role"
                       name="role"
                       value={formData.role}
                       onChange={handleChange}
                       required
                     >
-                      <option value="farmer">Farmer</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </div>
-                  {error && <div className="alert alert-danger">{error}</div>}
-                  <button type="submit" className="btn btn-primary w-100">
-                    Register
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+                      <MenuItem value="farmer">Farmer</MenuItem>
+                      <MenuItem value="admin">Admin</MenuItem>
+                    </TextField>
+                  </Grid>
+                </Grid>
+
+                {error && (
+                  <Alert severity="error" sx={{ width: "100%" }}>
+                    {error}
+                  </Alert>
+                )}
+
+                <Button
+                  type="submit"
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  sx={{
+                    mt: 2,
+                    textTransform: "none",
+                    fontSize: "1rem",
+                  }}
+                >
+                  Register
+                </Button>
+              </Box>
+            </Paper>
+          </Container>
+        </Box>
+      </Box>
+    </ThemeProvider>
   );
 };
 

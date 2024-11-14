@@ -179,6 +179,7 @@ const Dashboard = () => {
       )
     )
   );
+
   const [setpointData, setSetpointData] = useState([]);
 
   const navigate = useNavigate();
@@ -202,19 +203,20 @@ const Dashboard = () => {
     }
   }, []);
 
-  const checkDbStatus = useCallback(async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/db-status`);
-      setDbStatus(response.data.status);
-      if (response.data.status === "connected") {
-        fetchData("monitoring/daily", setDailyData);
-        fetchData("monitoring/weekly", setWeeklyData);
-      }
-    } catch (error) {
-      console.error("Error checking DB status:", error);
-      setDbStatus("disconnected");
+const checkDbStatus = useCallback(async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/db-status`);
+    setDbStatus(response.data.status);
+    if (response.data.status === "connected") {
+      fetchData("monitoring/daily", setDailyData);
+      fetchData("monitoring/weekly", setWeeklyData);
+      fetchData("setpoint", setSetpointData);
     }
-  }, [fetchData]);
+  } catch (error) {
+    console.error("Error checking DB status:", error);
+    setDbStatus("disconnected");
+  }
+}, [fetchData]);
 
   const checkDeviceStatus = useCallback(() => {
     const now = Date.now();
@@ -224,32 +226,32 @@ const Dashboard = () => {
   }, [lastDataTimestamp]);
 
   // Effect Hooks
-  useEffect(() => {
-    fetchData("monitoring/daily", setDailyData);
-    fetchData("monitoring/weekly", setWeeklyData);
-    fetchData("setpoint", setSetpointData);
-    checkDbStatus();
+useEffect(() => {
+  fetchData("monitoring/daily", setDailyData);
+  fetchData("monitoring/weekly", setWeeklyData);
+  fetchData("setpoint", setSetpointData);
+  checkDbStatus();
 
-    const intervals = [
-      setInterval(
-        () => fetchData("monitoring/daily", setDailyData),
-        REFRESH_INTERVALS.DAILY_DATA
-      ),
-      setInterval(
-        () => fetchData("monitoring/weekly", setWeeklyData),
-        REFRESH_INTERVALS.WEEKLY_DATA
-      ),
-      setInterval(checkDbStatus, REFRESH_INTERVALS.DB_STATUS),
-      setInterval(checkDeviceStatus, REFRESH_INTERVALS.DEVICE_STATUS),
-    ];
+  const intervals = [
+    setInterval(
+      () => fetchData("monitoring/daily", setDailyData),
+      REFRESH_INTERVALS.DAILY_DATA
+    ),
+    setInterval(
+      () => fetchData("monitoring/weekly", setWeeklyData),
+      REFRESH_INTERVALS.WEEKLY_DATA
+    ),
+    setInterval(checkDbStatus, REFRESH_INTERVALS.DB_STATUS),
+    setInterval(checkDeviceStatus, REFRESH_INTERVALS.DEVICE_STATUS),
+  ];
 
-    const ws = connectWebSocket();
+  const ws = connectWebSocket();
 
-    return () => {
-      intervals.forEach(clearInterval);
-      ws.close();
-    };
-  }, [fetchData, checkDbStatus, connectWebSocket, checkDeviceStatus]);
+  return () => {
+    intervals.forEach(clearInterval);
+    ws.close();
+  };
+}, [fetchData, checkDbStatus, connectWebSocket, checkDeviceStatus]);
 
   return (
     <div className="dashboard d-flex">
@@ -272,7 +274,7 @@ const Dashboard = () => {
           Dashboard
         </Typography>
 
-        {/* Metrics Grid with Alerts */}
+        {/* Setpoint and Metric */}
         <Grid container spacing={3} sx={{ mb: 2 }}>
           <Grid item xs={12} sm={4} md={2}>
             <StyledCard>

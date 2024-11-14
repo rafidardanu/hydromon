@@ -1,9 +1,19 @@
 /* eslint-disable react/prop-types */
 import { Card, CardContent, Typography, Grid } from "@mui/material";
+import { styled } from "@mui/material/styles";
 import StatusCard from "./StatusCard";
 
+// Styled Components
+const StyledCard = styled(Card)(() => ({
+  transition: "all 0.3s",
+  "&:hover": {
+    transform: "scale(1.05)",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+  },
+}));
+
 const SystemStatus = ({ dbStatus, mqttStatus, deviceStatus }) => (
-  <Card>
+  <StyledCard>
     <CardContent>
       <Typography variant="h6" gutterBottom sx={{ color: "text.primary" }}>
         System Status
@@ -20,7 +30,7 @@ const SystemStatus = ({ dbStatus, mqttStatus, deviceStatus }) => (
         </Grid>
       </Grid>
     </CardContent>
-  </Card>
+  </StyledCard>
 );
 
 export default SystemStatus;
