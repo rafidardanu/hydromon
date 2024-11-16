@@ -3,13 +3,13 @@ import { Card, CardContent, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 
 // Styled Components
-const StyledCard = styled(Card)(() => ({
-  transition: "all 0.3s",
-  "&:hover": {
-    transform: "scale(1.05)",
-    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-  },
-}));
+  const StyledCard = styled(Card)(({ theme }) => ({
+    transition: "all 0.3s",
+    "&:hover": {
+      transform: "scale(1.04)",
+      boxShadow: theme.shadows[8],
+    },
+  }));
 
 const LastUpdate = ({ lastUpdate }) => {
   const currentTime = new Date().toLocaleTimeString();

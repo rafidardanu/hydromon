@@ -74,7 +74,7 @@ const Employee = () => {
 
   const fetchEmployees = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/employees`, {
+      const response = await axios.get(`${API_BASE_URL}/api/employees`, {
         headers: { Authorization: localStorage.getItem("token") },
       });
       setFilteredEmployees(response.data);
@@ -120,7 +120,7 @@ const Employee = () => {
 const handleEditSave = async () => {
   try {
     const response = await axios.put(
-      `${API_BASE_URL}/employees/${editingEmployee.id}`,
+      `${API_BASE_URL}/api/employees/${editingEmployee.id}`,
       {
         fullname: editingEmployee.fullname,
         email: editingEmployee.email,
@@ -155,7 +155,7 @@ const handleEditSave = async () => {
   const handleDeleteConfirm = async () => {
     try {
       await axios.delete(
-        `${API_BASE_URL}/employees/${deletingEmployee.id}`,
+        `${API_BASE_URL}/api/employees/${deletingEmployee.id}`,
         {
           headers: { Authorization: localStorage.getItem("token") },
         }

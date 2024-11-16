@@ -93,9 +93,12 @@ const History = () => {
   const fetchAllData = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`${API_BASE_URL}/history/monitoring`, {
-        headers: { Authorization: token },
-      });
+      const response = await axios.get(
+        `${API_BASE_URL}/api/history/monitoring`,
+        {
+          headers: { Authorization: token },
+        }
+      );
       setMonitoringData(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -105,10 +108,13 @@ const History = () => {
   const fetchFilteredData = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`${API_BASE_URL}/history/monitoring`, {
-        headers: { Authorization: token },
-        params: { startDate, endDate },
-      });
+      const response = await axios.get(
+        `${API_BASE_URL}/api/history/monitoring`,
+        {
+          headers: { Authorization: token },
+          params: { startDate, endDate },
+        }
+      );
       setMonitoringData(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);

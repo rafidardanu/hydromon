@@ -80,9 +80,13 @@ const Register = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${API_BASE_URL}/register`, formData, {
-        headers: { Authorization: localStorage.getItem("token") },
-      });
+      const response = await axios.post(
+        `${API_BASE_URL}/api/register`,
+        formData,
+        {
+          headers: { Authorization: localStorage.getItem("token") },
+        }
+      );
       console.log("Registration successful", response.data);
       setError("");
       navigate("/employee");

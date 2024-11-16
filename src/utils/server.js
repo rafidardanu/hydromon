@@ -20,7 +20,7 @@ const db = mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   waitForConnections: true,
-  connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT) || 10,
+  connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT),
   queueLimit: 0,
 });
 
@@ -97,7 +97,7 @@ app.post("/api/login", (req, res) => {
         const token = jwt.sign(
           { id: user.id, username: user.username, role: user.role },
           process.env.JWT_SECRET,
-          { expiresIn: process.env.JWT_EXPIRATION || "1h" }
+          { expiresIn: process.env.JWT_EXPIRATION}
         );
         res.json({
           message: "Login successful",
@@ -182,6 +182,65 @@ app.get("/api/setpoint", verifyToken, (req, res) => {
       return res.status(500).json({ error: "Error fetching setpoint" });
     }
     res.json(results);
+  });
+});
+
+// API endpoint for accuracy
+// Modified accuracy endpoint
+app.get("/api/accuracy", verifyToken, (req, res) => {
+  const { startDate, endDate, profileId } = req.query;
+  
+  // Modified query to use the selected profile's setpoint values
+  const query = `
+    SELECT 
+      DATE(timestamp) as date,
+      ROUND(AVG(watertemp), 2) as avg_watertemp,
+      ROUND(AVG(waterppm), 2) as avg_waterppm,
+      ROUND(AVG(waterph), 2) as avg_waterph,
+      ROUND(AVG(airtemp), 2) as avg_airtemp,
+      ROUND(AVG(airhum), 2) as avg_airhum,
+      (
+        SELECT watertemp 
+        FROM setpoint 
+        WHERE id = ?
+      ) as target_watertemp,
+      (
+        SELECT waterppm 
+        FROM setpoint 
+        WHERE id = ?
+      ) as target_waterppm,
+      (
+        SELECT waterph 
+        FROM setpoint 
+        WHERE id = ?
+      ) as target_waterph
+    FROM monitoring
+    WHERE DATE(timestamp) BETWEEN ? AND ?
+    GROUP BY DATE(timestamp)
+    ORDER BY DATE(timestamp)
+  `;
+
+  db.query(query, [profileId, profileId, profileId, startDate, endDate], (err, results) => {
+    if (err) {
+      console.error("Error fetching accuracy data:", err);
+      return res.status(500).json({ error: "Error fetching accuracy data" });
+    }
+
+    // Calculate accuracy percentage for each measurement
+    const processedResults = results.map(row => {
+      const waterTempAccuracy = (100 - Math.abs((row.avg_watertemp - row.target_watertemp) / row.target_watertemp * 100)).toFixed(2);
+      const waterPpmAccuracy = (100 - Math.abs((row.avg_waterppm - row.target_waterppm) / row.target_waterppm * 100)).toFixed(2);
+      const waterPhAccuracy = (100 - Math.abs((row.avg_waterph - row.target_waterph) / row.target_waterph * 100)).toFixed(2);
+
+      return {
+        ...row,
+        watertemp_accuracy: waterTempAccuracy,
+        waterppm_accuracy: waterPpmAccuracy,
+        waterph_accuracy: waterPhAccuracy
+      };
+    });
+
+    res.json(processedResults);
   });
 });
 

@@ -37,7 +37,7 @@ function connectToBroker() {
   client.on("connect", () => {
     console.log("Client connected:", clientId);
     // Subscribe to both monitoring and actuator topics
-    const topics = [process.env.MQTT_TOPIC, process.env.MQTT_ACTUATOR_TOPIC];
+    const topics = [process.env.MQTT_MONITORING, process.env.MQTT_ACTUATOR];
     topics.forEach((topic) => {
       client.subscribe(topic, { qos: 0 });
       console.log(`Subscribed to Topic: ${topic}`);

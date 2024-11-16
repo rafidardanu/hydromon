@@ -32,13 +32,13 @@ const WS_URL = import.meta.env.VITE_WS_URL;
 
 
 // Styled Components
-const StyledCard = styled(Card)(() => ({
-  transition: "all 0.3s",
-  "&:hover": {
-    transform: "scale(1.05)",
-    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-  },
-}));
+  const StyledCard = styled(Card)(({ theme }) => ({
+    transition: "all 0.3s",
+    "&:hover": {
+      transform: "scale(1.04)",
+      boxShadow: theme.shadows[8],
+    },
+  }));
 
 const ChartSelector = styled(ToggleButtonGroup)(({ theme }) => ({
   position: "absolute",
@@ -194,7 +194,7 @@ const Dashboard = () => {
   // API Functions
   const fetchData = useCallback(async (endpoint, setter) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/${endpoint}`, {
+      const response = await axios.get(`${API_BASE_URL}/api/${endpoint}`, {
         headers: { Authorization: localStorage.getItem("token") },
       });
       setter(response.data);
@@ -205,7 +205,7 @@ const Dashboard = () => {
 
 const checkDbStatus = useCallback(async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/db-status`);
+    const response = await axios.get(`${API_BASE_URL}/api/db-status`);
     setDbStatus(response.data.status);
     if (response.data.status === "connected") {
       fetchData("monitoring/daily", setDailyData);
