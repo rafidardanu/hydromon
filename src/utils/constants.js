@@ -15,6 +15,12 @@ export const CHART_COLORS = {
   airhum: "#413ea0",
 };
 
+export const ACCURACY_COLORS = {
+  high: "#4CAF50", // green for >= 90%
+  medium: "#FF9800", // orange for >= 80%
+  low: "#F44336", // red for < 80%
+};
+
 export const METRIC_CONFIGS = {
   watertemp: {
     unit: "°C",

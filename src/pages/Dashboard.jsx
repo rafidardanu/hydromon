@@ -26,6 +26,7 @@ import SystemStatus from "../components/dashboard/SystemStatus";
 import ChemicalIndicator from "../components/dashboard/ChemicalIndicator";
 import PumpIndicator from "../components/dashboard/PumpIndicator";
 import LastUpdate from "../components/dashboard/LastUpdate";
+import { isTokenExpired, removeAuthToken } from "../utils/auth";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const WS_URL = import.meta.env.VITE_WS_URL;
@@ -67,21 +68,46 @@ const setStoredData = (key, data) => {
 };
 
 // Custom Hooks
+// const useAuth = () => {
+//   const navigate = useNavigate();
+//   const [username, setUsername] = useState("");
+
+//   useEffect(() => {
+//     const user = JSON.parse(localStorage.getItem("user"));
+//     if (user?.username) {
+//       setUsername(user.username);
+//     } else {
+//       navigate("/login");
+//     }
+//   }, [navigate]);
+
+//   const handleLogout = () => {
+//     localStorage.removeItem("token");
+//     localStorage.removeItem("user");
+//     navigate("/login");
+//   };
+
+//   return { username, handleLogout };
+// };
+
 const useAuth = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
     const user = JSON.parse(localStorage.getItem("user"));
-    if (user?.username) {
-      setUsername(user.username);
-    } else {
-      navigate("/login");
+
+    if (!token || isTokenExpired(token) || !user?.username) {
+      handleLogout();
+      return;
     }
+
+    setUsername(user.username);
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    removeAuthToken();
     localStorage.removeItem("user");
     navigate("/login");
   };
@@ -99,48 +125,61 @@ const useWebSocket = (
     getStoredData(STORAGE_KEYS.LAST_UPDATE, null)
   );
 
-  const connectWebSocket = useCallback(() => {
-    const ws = new WebSocket(WS_URL);
+  // const connectWebSocket = useCallback(() => {
+  //   const ws = new WebSocket(WS_URL);
 
-    ws.onopen = () => {
-      console.log("Connected to WebSocket");
-      setMqttStatus("connected");
-    };
+  //   ws.onopen = () => {
+  //     console.log("Connected to WebSocket");
+  //     setMqttStatus("connected");
+  //   };
 
-    ws.onmessage = (event) => {
-      const { topic, data } = JSON.parse(event.data);
+ const connectWebSocket = useCallback(() => {
+   const token = localStorage.getItem("token");
+   if (!token || isTokenExpired(token)) {
+     return null;
+   }
 
-      if (topic === "herbalawu/monitoring") {
-        const processedData = Object.fromEntries(
-          Object.entries(data).map(([key, value]) => [key, Number(value)])
-        );
+   const ws = new WebSocket(WS_URL);
 
-        setCardData(processedData);
-        setStoredData(STORAGE_KEYS.CARD_DATA, processedData);
+   ws.onopen = () => {
+     console.log("Connected to WebSocket");
+     setMqttStatus("connected");
+   };
 
-        setDeviceStatus("connected");
-        const timestamp = Date.now();
-        lastDataTimestamp.current = timestamp;
-        setStoredData(STORAGE_KEYS.LAST_UPDATE, timestamp);
-      } else if (topic === "herbalawu/aktuator") {
-        const processedData = Object.fromEntries(
-          Object.entries(data).map(([key, value]) => [key, Number(value)])
-        );
+   ws.onmessage = (event) => {
+     const { topic, data } = JSON.parse(event.data);
 
-        setActuatorStatus(processedData);
-        setStoredData(STORAGE_KEYS.ACTUATOR_STATUS, processedData);
-      }
-    };
+     if (topic === "herbalawu/monitoring") {
+       const processedData = Object.fromEntries(
+         Object.entries(data).map(([key, value]) => [key, Number(value)])
+       );
 
-    ws.onclose = () => {
-      console.log("WebSocket connection closed");
-      setMqttStatus("disconnected");
-      setDeviceStatus("disconnected");
-      setTimeout(connectWebSocket, 5000);
-    };
+       setCardData(processedData);
+       setStoredData(STORAGE_KEYS.CARD_DATA, processedData);
 
-    return ws;
-  }, [setCardData, setActuatorStatus, setDeviceStatus, setMqttStatus]);
+       setDeviceStatus("connected");
+       const timestamp = Date.now();
+       lastDataTimestamp.current = timestamp;
+       setStoredData(STORAGE_KEYS.LAST_UPDATE, timestamp);
+     } else if (topic === "herbalawu/aktuator") {
+       const processedData = Object.fromEntries(
+         Object.entries(data).map(([key, value]) => [key, Number(value)])
+       );
+
+       setActuatorStatus(processedData);
+       setStoredData(STORAGE_KEYS.ACTUATOR_STATUS, processedData);
+     }
+   };
+
+   ws.onclose = () => {
+     console.log("WebSocket connection closed");
+     setMqttStatus("disconnected");
+     setDeviceStatus("disconnected");
+     setTimeout(connectWebSocket, 5000);
+   };
+
+   return ws;
+ }, [setCardData, setActuatorStatus, setDeviceStatus, setMqttStatus]);
 
   return { connectWebSocket, lastDataTimestamp };
 };
@@ -192,32 +231,82 @@ const Dashboard = () => {
   );
 
   // API Functions
+
+  // const fetchData = useCallback(async (endpoint, setter) => {
+  //   try {
+  //     const response = await axios.get(`${API_BASE_URL}/api/${endpoint}`, {
+  //       headers: { Authorization: localStorage.getItem("token") },
+  //     });
+  //     setter(response.data);
+  //   } catch (error) {
+  //     console.error(`Error fetching ${endpoint} data:`, error);
+  //   }
+  // }, []);
+
   const fetchData = useCallback(async (endpoint, setter) => {
     try {
+      const token = localStorage.getItem("token");
+
+      if (!token || isTokenExpired(token)) {
+        handleLogout();
+        return;
+      }
+
       const response = await axios.get(`${API_BASE_URL}/api/${endpoint}`, {
-        headers: { Authorization: localStorage.getItem("token") },
+        headers: { Authorization: `Bearer ${token}` },
       });
       setter(response.data);
     } catch (error) {
+      if (error.response?.status === 401) {
+        handleLogout();
+      }
       console.error(`Error fetching ${endpoint} data:`, error);
     }
   }, []);
 
-const checkDbStatus = useCallback(async () => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/api/db-status`);
-    setDbStatus(response.data.status);
-    if (response.data.status === "connected") {
-      fetchData("monitoring/daily", setDailyData);
-      fetchData("monitoring/weekly", setWeeklyData);
-      fetchData("setpoint", setSetpointData);
-    }
-  } catch (error) {
-    console.error("Error checking DB status:", error);
-    setDbStatus("disconnected");
-  }
-}, [fetchData]);
+  // const checkDbStatus = useCallback(async () => {
+  //   try {
+  //     const response = await axios.get(`${API_BASE_URL}/api/db-status`);
+  //     setDbStatus(response.data.status);
+  //     if (response.data.status === "connected") {
+  //       fetchData("monitoring/daily", setDailyData);
+  //       fetchData("monitoring/weekly", setWeeklyData);
+  //       fetchData("setpoint", setSetpointData);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error checking DB status:", error);
+  //     setDbStatus("disconnected");
+  //   }
+  // }, [fetchData]);
 
+  const checkDbStatus = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token || isTokenExpired(token)) {
+        handleLogout();
+        return;
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/api/db-status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setDbStatus(response.data.status);
+      if (response.data.status === "connected") {
+        fetchData("monitoring/daily", setDailyData);
+        fetchData("monitoring/weekly", setWeeklyData);
+        fetchData("setpoint", setSetpointData);
+      }
+    } catch (error) {
+      console.error("Error checking DB status:", error);
+      if (error.response?.status === 401) {
+        handleLogout();
+      }
+      setDbStatus("disconnected");
+    }
+  }, [fetchData]);
+  
   const checkDeviceStatus = useCallback(() => {
     const now = Date.now();
     if (lastDataTimestamp.current && now - lastDataTimestamp.current > 5000) {
