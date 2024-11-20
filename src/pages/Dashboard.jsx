@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -68,28 +69,6 @@ const setStoredData = (key, data) => {
 };
 
 // Custom Hooks
-// const useAuth = () => {
-//   const navigate = useNavigate();
-//   const [username, setUsername] = useState("");
-
-//   useEffect(() => {
-//     const user = JSON.parse(localStorage.getItem("user"));
-//     if (user?.username) {
-//       setUsername(user.username);
-//     } else {
-//       navigate("/login");
-//     }
-//   }, [navigate]);
-
-//   const handleLogout = () => {
-//     localStorage.removeItem("token");
-//     localStorage.removeItem("user");
-//     navigate("/login");
-//   };
-
-//   return { username, handleLogout };
-// };
-
 const useAuth = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
@@ -124,14 +103,6 @@ const useWebSocket = (
   const lastDataTimestamp = useRef(
     getStoredData(STORAGE_KEYS.LAST_UPDATE, null)
   );
-
-  // const connectWebSocket = useCallback(() => {
-  //   const ws = new WebSocket(WS_URL);
-
-  //   ws.onopen = () => {
-  //     console.log("Connected to WebSocket");
-  //     setMqttStatus("connected");
-  //   };
 
  const connectWebSocket = useCallback(() => {
    const token = localStorage.getItem("token");
@@ -219,7 +190,7 @@ const Dashboard = () => {
     )
   );
 
-  const [setpointData, setSetpointData] = useState([]);
+  const [setpointData, setProfileData] = useState([]);
 
   const navigate = useNavigate();
   const { username, handleLogout } = useAuth();
@@ -231,18 +202,6 @@ const Dashboard = () => {
   );
 
   // API Functions
-
-  // const fetchData = useCallback(async (endpoint, setter) => {
-  //   try {
-  //     const response = await axios.get(`${API_BASE_URL}/api/${endpoint}`, {
-  //       headers: { Authorization: localStorage.getItem("token") },
-  //     });
-  //     setter(response.data);
-  //   } catch (error) {
-  //     console.error(`Error fetching ${endpoint} data:`, error);
-  //   }
-  // }, []);
-
   const fetchData = useCallback(async (endpoint, setter) => {
     try {
       const token = localStorage.getItem("token");
@@ -264,21 +223,6 @@ const Dashboard = () => {
     }
   }, []);
 
-  // const checkDbStatus = useCallback(async () => {
-  //   try {
-  //     const response = await axios.get(`${API_BASE_URL}/api/db-status`);
-  //     setDbStatus(response.data.status);
-  //     if (response.data.status === "connected") {
-  //       fetchData("monitoring/daily", setDailyData);
-  //       fetchData("monitoring/weekly", setWeeklyData);
-  //       fetchData("setpoint", setSetpointData);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error checking DB status:", error);
-  //     setDbStatus("disconnected");
-  //   }
-  // }, [fetchData]);
-
   const checkDbStatus = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
@@ -296,7 +240,7 @@ const Dashboard = () => {
       if (response.data.status === "connected") {
         fetchData("monitoring/daily", setDailyData);
         fetchData("monitoring/weekly", setWeeklyData);
-        fetchData("setpoint", setSetpointData);
+        // fetchData("profile", setProfileData);
       }
     } catch (error) {
       console.error("Error checking DB status:", error);
@@ -318,7 +262,7 @@ const Dashboard = () => {
 useEffect(() => {
   fetchData("monitoring/daily", setDailyData);
   fetchData("monitoring/weekly", setWeeklyData);
-  fetchData("setpoint", setSetpointData);
+  fetchData("profile", setProfileData);
   checkDbStatus();
 
   const intervals = [

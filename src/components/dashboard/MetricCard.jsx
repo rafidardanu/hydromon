@@ -12,17 +12,17 @@ import {
 import { useSetpoint } from "./hooks/useSetpoint";
 
 // Styled Components
-  const StyledCard = styled(Card)(({ theme }) => ({
-    transition: "all 0.3s",
-    "&:hover": {
-      transform: "scale(1.04)",
-      boxShadow: theme.shadows[8],
-    },
-  }));
+const StyledCard = styled(Card)(({ theme }) => ({
+  transition: "all 0.3s",
+  "&:hover": {
+    transform: "scale(1.04)",
+    boxShadow: theme.shadows[8],
+  },
+}));
 
 const MetricValue = styled(Typography)(({ theme }) => ({
   fontFamily: "'Roboto Mono', monospace",
-  fontSize: "3rem",
+  fontSize: "3.3rem",
   fontWeight: "bold",
   textAlign: "center",
   marginTop: theme.spacing(2),
@@ -54,9 +54,20 @@ const getStatusIcon = (iconType, color) => {
   }
 };
 
+const formatValue = (value) => {
+  const numValue = Number(value);
+  return numValue % 1 === 0 ? numValue.toString() : numValue.toFixed(1);
+};
+
 const MetricCard = ({ value, unit, label, color, metricKey, setpointData }) => {
   const [showAlert, setShowAlert] = useState(false);
   const { status, thresholds } = useSetpoint(value, metricKey, setpointData);
+
+  // Format value conditionally
+  const formattedValue = formatValue(value);
+  const formattedSetpoint = thresholds
+    ? formatValue(thresholds.setpointValue)
+    : null;
 
   useEffect(() => {
     setShowAlert(!!status);
@@ -79,7 +90,7 @@ const MetricCard = ({ value, unit, label, color, metricKey, setpointData }) => {
           </Typography>
         </Box>
         <MetricValue style={{ color }}>
-          {value} {unit}
+          {formattedValue}{unit}
         </MetricValue>
         <Box in={showAlert}>
           <CenteredAlert
@@ -90,7 +101,7 @@ const MetricCard = ({ value, unit, label, color, metricKey, setpointData }) => {
             {`${label} ${status?.message || ""}`}
             {thresholds && (
               <Typography variant="caption" display="block">
-                Setpoint: {thresholds.setpointValue} {unit}
+                Setpoint: {formattedSetpoint} {unit}
               </Typography>
             )}
           </CenteredAlert>

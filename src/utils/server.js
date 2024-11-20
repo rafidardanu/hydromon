@@ -39,21 +39,6 @@ const checkDbConnection = (req, res, next) => {
 app.use(checkDbConnection);
 
 // Middleware to verify JWT token
-// const verifyToken = (req, res, next) => {
-//   const token = req.headers["authorization"];
-//   if (!token) {
-//     return res.status(403).json({ error: "No token provided" });
-//   }
-
-//   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-//     if (err) {
-//       return res.status(401).json({ error: "Failed to authenticate token" });
-//     }
-//     req.userId = decoded.id;
-//     req.userRole = decoded.role;
-//     next();
-//   });
-// };
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
@@ -203,12 +188,27 @@ app.get("/api/setpoint", verifyToken, (req, res) => {
   });
 });
 
+// API endpoint for profile
+app.get("/api/profile", verifyToken, (req, res) => {
+  const query = `
+    SELECT id, profile, watertemp, waterppm, waterph, status
+    FROM profile
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error("Error fetching profile:", err);
+      return res.status(500).json({ error: "Error fetching profile" });
+    }
+    res.json(results);
+  });
+});
+
 // API endpoint for accuracy
-// Modified accuracy endpoint
 app.get("/api/accuracy", verifyToken, (req, res) => {
   const { startDate, endDate, profileId } = req.query;
   
-  // Modified query to use the selected profile's setpoint values
+  // Modified query to use the selected profile's values
   const query = `
     SELECT 
       DATE(timestamp) as date,
@@ -219,17 +219,17 @@ app.get("/api/accuracy", verifyToken, (req, res) => {
       ROUND(AVG(airhum), 2) as avg_airhum,
       (
         SELECT watertemp 
-        FROM setpoint 
+        FROM profile 
         WHERE id = ?
       ) as target_watertemp,
       (
         SELECT waterppm 
-        FROM setpoint 
+        FROM profile 
         WHERE id = ?
       ) as target_waterppm,
       (
         SELECT waterph 
-        FROM setpoint 
+        FROM profile 
         WHERE id = ?
       ) as target_waterph
     FROM monitoring

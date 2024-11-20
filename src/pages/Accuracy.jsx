@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -76,31 +77,6 @@ export const Accuracy = () => {
   const [page, setPage] = useState(1);
   const [rowsPerPage] = useState(7);
 
-  // useEffect(() => {
-  //   const user = JSON.parse(localStorage.getItem("user"));
-  //   if (user && user.username) {
-  //     setUsername(user.username);
-  //     fetchProfiles();
-  //   } else {
-  //     navigate("/login");
-  //   }
-  // }, [navigate]);
-
-  // const fetchProfiles = async () => {
-  //   try {
-  //     setLoading(true);
-  //     const token = localStorage.getItem("token");
-  //     const response = await axios.get(`${API_BASE_URL}/api/setpoint`, {
-  //       headers: { Authorization: token },
-  //     });
-  //     setProfiles(response.data);
-  //   } catch (error) {
-  //     console.error("Error fetching profiles:", error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   useEffect(() => {
     const checkAuthAndFetch = async () => {
       const token = localStorage.getItem("token");
@@ -125,7 +101,7 @@ export const Accuracy = () => {
   const fetchProfiles = async (token) => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/api/setpoint`, {
+      const response = await axios.get(`${API_BASE_URL}/api/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setProfiles(response.data);
@@ -156,24 +132,6 @@ export const Accuracy = () => {
     }
     setPage(1);
   };
-
-  // const fetchAccuracyData = async () => {
-  //   try {
-  //     setLoading(true);
-  //     const token = localStorage.getItem("token");
-  //     const response = await axios.get(
-  //       `${API_BASE_URL}/api/accuracy?startDate=${startDate}&endDate=${endDate}&profileId=${selectedProfileId}`,
-  //       {
-  //         headers: { Authorization: token },
-  //       }
-  //     );
-  //     setAccuracyData(response.data);
-  //   } catch (error) {
-  //     console.error("Error fetching accuracy data:", error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
  const fetchAccuracyData = async () => {
    try {
@@ -313,7 +271,7 @@ export const Accuracy = () => {
                 <Grid item xs={12} sm={2}>
                   <Button
                     variant="contained"
-                    color="primary"
+                    color="success"
                     className="p-3"
                     fullWidth
                     onClick={fetchAccuracyData}
