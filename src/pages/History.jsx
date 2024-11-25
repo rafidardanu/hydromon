@@ -2,49 +2,14 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Typography,
-  Box,
-  Pagination,
-  TextField,
-  Button,
-} from "@mui/material";
-import { styled } from "@mui/material/styles";
-import { format } from "date-fns";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import { Typography, Box, Pagination } from "@mui/material";
 import Sidebar from "../components/Sidebar";
+import HistoryTable from "../components/history/HistoryTable";
+import HistoryFilter from "../components/history/HistoryFilter";
 import { isTokenExpired, removeAuthToken } from "../utils/auth";
+import { format } from "date-fns";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  fontWeight: "bold",
-  background: "#4CAF50",
-  color: theme.palette.common.white,
-  fontSize: 16,
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  "&:nth-of-type(odd)": {
-    backgroundColor: theme.palette.action.hover,
-  },
-  "&:last-child td, &:last-child th": {
-    border: 0,
-  },
-  transition: "all 0.3s",
-  "&:hover": {
-    backgroundColor: theme.palette.action.selected,
-    transform: "scale(1.01)",
-    boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-  },
-}));
 
 const History = () => {
   const navigate = useNavigate();
@@ -56,6 +21,13 @@ const History = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [isFiltering, setIsFiltering] = useState(false);
+  const [profiles, setProfiles] = useState([]);
+  const [selectedProfile, setSelectedProfile] = useState("");
+  const [targetValues, setTargetValues] = useState({
+    watertemp: 0,
+    waterph: 0,
+    waterppm: 0,
+  });
 
   useEffect(() => {
     const checkAuthAndFetch = async () => {
@@ -69,6 +41,7 @@ const History = () => {
 
       if (user && user.username) {
         setUsername(user.username);
+        await fetchProfiles(token);
         if (isFiltering) {
           await fetchFilteredData(token);
         } else {
@@ -82,6 +55,35 @@ const History = () => {
     checkAuthAndFetch();
   }, [isFiltering, startDate, endDate, navigate]);
 
+  const calculateError = (measured, target) => {
+    const error = ((Math.abs(measured - target) / target) * 100).toFixed(2);
+    return error;
+  };
+
+  const fetchProfiles = async (token) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setProfiles(response.data);
+    } catch (error) {
+      console.error("Error fetching profiles:", error);
+    }
+  };
+
+  const handleProfileChange = (event) => {
+    const profileId = event.target.value;
+    setSelectedProfile(profileId);
+    const selectedProfileData = profiles.find((p) => p.id === profileId);
+    if (selectedProfileData) {
+      setTargetValues({
+        watertemp: selectedProfileData.watertemp,
+        waterph: selectedProfileData.waterph,
+        waterppm: selectedProfileData.waterppm,
+      });
+    }
+  };
+
   const fetchAllData = async (token) => {
     try {
       const response = await axios.get(
@@ -90,7 +92,6 @@ const History = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      // Sort data in reverse chronological order
       const sortedData = response.data.sort(
         (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
       );
@@ -112,7 +113,6 @@ const History = () => {
           params: { startDate, endDate },
         }
       );
-      // Sort filtered data in reverse chronological order
       const sortedData = response.data.sort(
         (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
       );
@@ -157,32 +157,133 @@ const History = () => {
     setPage(1);
   };
 
-  const exportToCSV = () => {
-    let csvContent =
-      "Timestamp,Water Temp (°C),Water pH,Water PPM,Air Temp (°C),Air Humidity (%)\n";
+const exportToCSV = () => {
+    // Get selected profile info
+    const selectedProfileData = profiles.find((p) => p.id === selectedProfile);
+    const profileName = selectedProfileData
+      ? selectedProfileData.profile
+      : "No Profile Selected";
 
+    let csvContent = "\ufeff";
+
+    // Add metadata section with proper spacing
+    csvContent += "Profile Information\n\n";
+    csvContent += `Selected Profile,${profileName}\n\n`;
+
+    if (selectedProfile) {
+      csvContent += "Target Values\n";
+      csvContent += `Water Temperature,${targetValues.watertemp} Celsius\n`;
+      csvContent += `Water pH,${targetValues.waterph}\n`;
+      csvContent += `Water PPM,${targetValues.waterppm}\n\n`;
+    }
+
+    csvContent += "Measurement Data\n";
+
+    const headers = [
+      "Timestamp",
+      "Water Temperature (Celsius)",
+      selectedProfile ? "Temperature Error (%)" : null,
+      "Water pH",
+      selectedProfile ? "pH Error (%)" : null,
+      "Water PPM",
+      selectedProfile ? "PPM Error (%)" : null,
+      "Air Temperature (Celsius)",
+      "Air Humidity (%)",
+    ].filter(Boolean);
+
+    csvContent += headers.join(",") + "\n";
+
+    // Process data rows
     monitoringData.forEach((item) => {
-      const row = `${format(
-        new Date(item.timestamp),
-        "yyyy-MM-dd HH:mm:ss"
-      )},${item.watertemp.toFixed(2)},${item.waterph.toFixed(
-        2
-      )},${item.waterppm.toFixed(2)},${item.airtemp.toFixed(
-        2
-      )},${item.airhum.toFixed(2)}`;
-      csvContent += row + "\n";
+      const row = [
+        format(new Date(item.timestamp), "yyyy-MM-dd HH:mm:ss"),
+
+        item.watertemp.toFixed(2),
+
+        selectedProfile
+          ? calculateError(item.watertemp, targetValues.watertemp)
+          : null,
+
+        item.waterph.toFixed(2),
+
+        selectedProfile
+          ? calculateError(item.waterph, targetValues.waterph)
+          : null,
+
+        item.waterppm.toFixed(2),
+
+        selectedProfile
+          ? calculateError(item.waterppm, targetValues.waterppm)
+          : null,
+
+        item.airtemp.toFixed(2),
+
+        item.airhum.toFixed(2),
+      ].filter(Boolean);
+
+      csvContent += row.join(",") + "\n";
     });
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    // if (selectedProfile) {
+    //   csvContent += "\nSummary Statistics\n";
+
+    //   // Calculate averages
+    //   const avgWaterTemp =
+    //     monitoringData.reduce((sum, item) => sum + item.watertemp, 0) /
+    //     monitoringData.length;
+    //   const avgWaterPh =
+    //     monitoringData.reduce((sum, item) => sum + item.waterph, 0) /
+    //     monitoringData.length;
+    //   const avgWaterPpm =
+    //     monitoringData.reduce((sum, item) => sum + item.waterppm, 0) /
+    //     monitoringData.length;
+
+    //   // Calculate errors
+    //   const avgWaterTempError = calculateError(
+    //     avgWaterTemp,
+    //     targetValues.watertemp
+    //   );
+    //   const avgWaterPhError = calculateError(avgWaterPh, targetValues.waterph);
+    //   const avgWaterPpmError = calculateError(
+    //     avgWaterPpm,
+    //     targetValues.waterppm
+    //   );
+
+    //   // Add formatted averages and errors
+    //   csvContent += `Average Water Temperature,${avgWaterTemp.toFixed(
+    //     2
+    //   )} Celsius,Error,${avgWaterTempError}%\n`;
+    //   csvContent += `Average Water pH,${avgWaterPh.toFixed(
+    //     2
+    //   )},Error,${avgWaterPhError}%\n`;
+    //   csvContent += `Average Water PPM,${avgWaterPpm.toFixed(
+    //     2
+    //   )},Error,${avgWaterPpmError}%\n\n`;
+
+    //   // Add date range if filtering is active
+    //   if (startDate && endDate) {
+    //     csvContent += `Date Range,${startDate} to ${endDate}\n`;
+    //   }
+    // }
+
+    // Create and trigger download with proper encoding
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
     const link = document.createElement("a");
+
     if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
+      const timestamp = format(new Date(), "yyyyMMdd_HHmmss");
+      const filename = selectedProfile
+        ? `monitoring_data_${profileName.replace(/\s+/g, "_")}_${timestamp}.csv`
+        : `monitoring_data_${timestamp}.csv`;
+
       link.setAttribute("href", url);
-      link.setAttribute("download", "monitoring_data.csv");
+      link.setAttribute("download", filename);
       link.style.visibility = "hidden";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     }
   };
 
@@ -204,95 +305,26 @@ const History = () => {
           Monitoring History
         </Typography>
 
-        <Box
-          display="flex"
-          alignItems="center"
-          mb={3}
-          sx={{
-            gap: 2,
-            flexWrap: "wrap",
-          }}
-        >
-          <Box
-            display="flex"
-            gap={2}
-            sx={{
-              flexGrow: 1,
-              flexBasis: "300px",
-              flexWrap: "wrap",
-            }}
-          >
-            <TextField
-              type="date"
-              label="Start Date"
-              value={startDate}
-              onChange={(e) => handleDateChange("start", e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              sx={{ minWidth: "200px" }}
-            />
-            <TextField
-              type="date"
-              label="End Date"
-              value={endDate}
-              onChange={(e) => handleDateChange("end", e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              sx={{ minWidth: "200px" }}
-            />
-            {isFiltering && (
-              <Button
-                variant="outlined"
-                color="success"
-                onClick={handleClearFilter}
-              >
-                Clear Filter
-              </Button>
-            )}
-          </Box>
-          <Button
-            onClick={exportToCSV}
-            startIcon={<FileDownloadIcon />}
-            variant="contained"
-            color="success"
-            className="p-3"
-          >
-            Export to CSV
-          </Button>
-        </Box>
+        <HistoryFilter
+          startDate={startDate}
+          endDate={endDate}
+          handleDateChange={handleDateChange}
+          isFiltering={isFiltering}
+          handleClearFilter={handleClearFilter}
+          profiles={profiles}
+          selectedProfile={selectedProfile}
+          handleProfileChange={handleProfileChange}
+          exportToCSV={exportToCSV}
+        />
 
-        <TableContainer
-          component={Paper}
-          elevation={6}
-          style={{ borderRadius: 15 }}
-        >
-          <Table>
-            <TableHead>
-              <TableRow>
-                <StyledTableCell>Timestamp</StyledTableCell>
-                <StyledTableCell>Water Temp (°C)</StyledTableCell>
-                <StyledTableCell>Water pH</StyledTableCell>
-                <StyledTableCell>Water PPM</StyledTableCell>
-                <StyledTableCell>Air Temp (°C)</StyledTableCell>
-                <StyledTableCell>Air Humidity (%)</StyledTableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {monitoringData
-                .slice((page - 1) * rowsPerPage, page * rowsPerPage)
-                .map((item, index) => (
-                  <StyledTableRow key={index}>
-                    <TableCell>
-                      {format(new Date(item.timestamp), "yyyy-MM-dd HH:mm:ss")}
-                    </TableCell>
-                    <TableCell>{item.watertemp.toFixed(2)}</TableCell>
-                    <TableCell>{item.waterph.toFixed(2)}</TableCell>
-                    <TableCell>{item.waterppm.toFixed(2)}</TableCell>
-                    <TableCell>{item.airtemp.toFixed(2)}</TableCell>
-                    <TableCell>{item.airhum.toFixed(2)}</TableCell>
-                  </StyledTableRow>
-                ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <HistoryTable
+          monitoringData={monitoringData}
+          selectedProfile={selectedProfile}
+          targetValues={targetValues}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          calculateError={calculateError}
+        />
 
         <Box display="flex" justifyContent="center" mt={4}>
           <Pagination

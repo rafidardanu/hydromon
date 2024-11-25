@@ -34,13 +34,13 @@ const WS_URL = import.meta.env.VITE_WS_URL;
 
 
 // Styled Components
-  const StyledCard = styled(Card)(({ theme }) => ({
-    transition: "all 0.3s",
-    "&:hover": {
-      transform: "scale(1.04)",
-      boxShadow: theme.shadows[8],
-    },
-  }));
+const StyledCard = styled(Card)(({ theme }) => ({
+transition: "all 0.3s",
+  "&:hover": {
+    transform: "scale(1.04)",
+    boxShadow: theme.shadows[8],
+  },
+}));
 
 const ChartSelector = styled(ToggleButtonGroup)(({ theme }) => ({
   position: "absolute",
@@ -146,7 +146,6 @@ const useWebSocket = (
      console.log("WebSocket connection closed");
      setMqttStatus("disconnected");
      setDeviceStatus("disconnected");
-     setTimeout(connectWebSocket, 5000);
    };
 
    return ws;
@@ -253,7 +252,7 @@ const Dashboard = () => {
   
   const checkDeviceStatus = useCallback(() => {
     const now = Date.now();
-    if (lastDataTimestamp.current && now - lastDataTimestamp.current > 5000) {
+    if (lastDataTimestamp.current && now - lastDataTimestamp.current > 6000) {
       setDeviceStatus("disconnected");
     }
   }, [lastDataTimestamp]);
@@ -374,7 +373,7 @@ useEffect(() => {
           </Grid>
         </Grid>
 
-        {/* Status and Controls Grid */}
+        {/* Status Grid */}
         <Grid container spacing={3}>
           <Grid item xs={12} md={3}>
             <SystemStatus

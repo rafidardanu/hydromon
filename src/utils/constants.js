@@ -16,9 +16,9 @@ export const CHART_COLORS = {
 };
 
 export const ACCURACY_COLORS = {
-  high: "#4CAF50", // green for >= 90%
-  medium: "#FF9800", // orange for >= 80%
-  low: "#F44336", // red for < 80%
+  high: "#4CAF50",
+  medium: "#FF9800",
+  low: "#F44336",
 };
 
 export const METRIC_CONFIGS = {

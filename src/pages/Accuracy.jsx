@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, CheckCircle2, XCircle, AlarmClockOff } from "lucide-react";
 import {
   Typography,
   Box,
@@ -25,10 +25,10 @@ import {
   Paper,
   Pagination,
 } from "@mui/material";
-import { CHART_COLORS, ACCURACY_COLORS } from "../utils/constants";
 import { styled } from "@mui/material/styles";
 import Sidebar from "../components/Sidebar";
 import { isTokenExpired, removeAuthToken } from "../utils/auth";
+import { CHART_COLORS, ACCURACY_COLORS } from "../utils/constants";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -42,24 +42,31 @@ const DataSetpoint = styled(Card)(({ theme, bgcolor }) => ({
   },
 }));
 
-const AccuracyCard = styled(Card)(({ theme, accuracy }) => ({
-  backgroundColor: theme.palette.background.paper,
-  borderRadius: theme.shape.borderRadius,
-  padding: theme.spacing(2),
-  height: "100%",
-  transition: "all 0.3s ease",
-  "&:hover": {
-    transform: "translateY(-5px)",
-    boxShadow: theme.shadows[8],
-  },
-  border: `2px solid ${getAccuracyColor(accuracy)}`,
-}));
+const AccuracyCard = styled(Card)(({ theme, error }) => {
+  const color = getErrorColor(error);
+  return {
+    backgroundColor: `${color}10`,
+    borderLeft: `4px solid ${color}`,
+    transition: "all 0.3s ease",
+    "&:hover": {
+      transform: "translateY(-5px)",
+      boxShadow: theme.shadows[4],
+    },
+  };
+});
 
-const getAccuracyColor = (accuracy) => {
-  const value = parseFloat(accuracy);
-  if (value >= 90) return ACCURACY_COLORS.high;
-  if (value >= 80) return ACCURACY_COLORS.medium;
+const getErrorColor = (error) => {
+  const value = parseFloat(error);
+  if (value <= 5) return ACCURACY_COLORS.high;
+  if (value <= 10) return ACCURACY_COLORS.medium;
   return ACCURACY_COLORS.low;
+};
+
+const getErrorIcon = (error) => {
+  const value = parseFloat(error);
+  if (value <= 5) return <CheckCircle2 color={ACCURACY_COLORS.high} />;
+  if (value <= 10) return <AlarmClockOff color={ACCURACY_COLORS.medium} />;
+  return <XCircle color={ACCURACY_COLORS.low} />;
 };
 
 export const Accuracy = () => {
@@ -72,7 +79,7 @@ export const Accuracy = () => {
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [accuracyData, setAccuracyData] = useState([]);
+  const [errorData, setErrorData] = useState([]);
   const [selectedProfileId, setSelectedProfileId] = useState("");
   const [page, setPage] = useState(1);
   const [rowsPerPage] = useState(7);
@@ -132,36 +139,39 @@ export const Accuracy = () => {
     }
     setPage(1);
   };
+  const calculateError = (measured, target) => {
+    const error = ((Math.abs(measured - target) / target) * 100).toFixed(2);
+    return error;
+  };
+  
+  const fetchErrorData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
 
- const fetchAccuracyData = async () => {
-   try {
-     setLoading(true);
-     const token = localStorage.getItem("token");
+      if (!token || isTokenExpired(token)) {
+        handleLogout();
+        return;
+      }
 
-     if (!token || isTokenExpired(token)) {
-       handleLogout();
-       return;
-     }
-
-     const response = await axios.get(
-       `${API_BASE_URL}/api/accuracy?startDate=${startDate}&endDate=${endDate}&profileId=${selectedProfileId}`,
-       {
-         headers: { Authorization: `Bearer ${token}` },
-       }
-     );
-     setAccuracyData(response.data);
-   } catch (error) {
-     console.error("Error fetching accuracy data:", error);
-     if (error.response?.status === 401) {
-       handleLogout();
-     }
-   } finally {
-     setLoading(false);
-   }
- };
+      const response = await axios.get(
+        `${API_BASE_URL}/api/accuracy?startDate=${startDate}&endDate=${endDate}&profileId=${selectedProfileId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setErrorData(response.data);
+    } catch (error) {
+      console.error("Error fetching error data:", error);
+      if (error.response?.status === 401) {
+        handleLogout();
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
-    // localStorage.removeItem("token");
     removeAuthToken();
     localStorage.removeItem("user");
     navigate("/login");
@@ -179,30 +189,62 @@ export const Accuracy = () => {
   const getCurrentPageData = () => {
     const startIndex = (page - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
-    return accuracyData.slice(startIndex, endIndex);
+    return errorData.slice(startIndex, endIndex);
   };
 
-  const calculateAverageAccuracy = (data) => {
-    if (!data || data.length === 0) return 0;
+const calculateAverageError = (data) => {
+  if (!data || data.length === 0) return 0;
 
-    const totalAccuracy = data.reduce((acc, row) => {
-      const tempAcc = parseFloat(row.watertemp_accuracy) || 0;
-      const ppmAcc = parseFloat(row.waterppm_accuracy) || 0;
-      const phAcc = parseFloat(row.waterph_accuracy) || 0;
-      return acc + (tempAcc + ppmAcc + phAcc) / 3;
-    }, 0);
+  const tempErrors = data.map((row) =>
+    calculateError(row.avg_watertemp, targetValues.watertemp)
+  );
+  const ppmErrors = data.map((row) =>
+    calculateError(row.avg_waterppm, targetValues.waterppm)
+  );
+  const phErrors = data.map((row) =>
+    calculateError(row.avg_waterph, targetValues.waterph)
+  );
 
-    return (totalAccuracy / data.length).toFixed(2);
+  const avgTempError =
+    tempErrors.reduce((sum, error) => sum + parseFloat(error), 0) /
+    tempErrors.length;
+  const avgPpmError =
+    ppmErrors.reduce((sum, error) => sum + parseFloat(error), 0) /
+    ppmErrors.length;
+  const avgPhError =
+    phErrors.reduce((sum, error) => sum + parseFloat(error), 0) /
+    phErrors.length;
+
+  return ((avgTempError + avgPpmError + avgPhError) / 3).toFixed(2);
+};
+
+const calculateParameterAverage = (data, parameter) => {
+  if (!data || data.length === 0) return 0;
+
+  // Mapping parameter ke fungsi perhitungan kesalahan yang sesuai
+  const errorCalculations = {
+    watertemp_error: () =>
+      data.map((row) =>
+        calculateError(row.avg_watertemp, targetValues.watertemp)
+      ),
+    waterppm_error: () =>
+      data.map((row) =>
+        calculateError(row.avg_waterppm, targetValues.waterppm)
+      ),
+    waterph_error: () =>
+      data.map((row) => calculateError(row.avg_waterph, targetValues.waterph)),
   };
 
-  const calculateParameterAverage = (data, parameter) => {
-    if (!data || data.length === 0) return 0;
-    const total = data.reduce(
-      (acc, row) => acc + parseFloat(row[parameter]) || 0,
-      0
-    );
-    return (total / data.length).toFixed(2);
-  };
+  // Jika parameter tidak valid, kembalikan 0
+  if (!errorCalculations[parameter]) return 0;
+
+  // Hitung rata-rata kesalahan
+  const errors = errorCalculations[parameter]();
+  const avgError =
+    errors.reduce((sum, error) => sum + parseFloat(error), 0) / errors.length;
+
+  return avgError.toFixed(2);
+};
 
   return (
     <div className="dashboard d-flex">
@@ -216,14 +258,14 @@ export const Accuracy = () => {
         <Typography
           variant="h4"
           gutterBottom
-          sx={{ fontWeight: "bold", color: "success.main", mb: 4 }}
+          sx={{ fontWeight: "bold", color: "success.main", mb: 2 }}
         >
           Accuracy
         </Typography>
-        <Grid container spacing={3}>
+        <Grid container spacing={2}>
           {/* section kiri */}
           <Grid item xs={12} md={6} lg={9}>
-            <Card sx={{p: 3 }}>
+            <Card sx={{ p: 3 }}>
               <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
                 <Grid item xs={12} sm={4}>
                   <FormControl fullWidth>
@@ -274,7 +316,7 @@ export const Accuracy = () => {
                     color="success"
                     className="p-3"
                     fullWidth
-                    onClick={fetchAccuracyData}
+                    onClick={fetchErrorData}
                     disabled={
                       loading || !selectedProfileId || !startDate || !endDate
                     }
@@ -290,7 +332,7 @@ export const Accuracy = () => {
                   </Button>
                 </Grid>
               </Grid>
-              <Grid item container spacing={1}>
+              <Grid item container spacing={1} mb={3}>
                 {loading ? (
                   <Grid item xs={12}>
                     <Box display="flex" justifyContent="center" my={4}>
@@ -340,7 +382,7 @@ export const Accuracy = () => {
                   )
                 )}
               </Grid>
-              <Grid item sx={{ mb: 4, p: 2 }}>
+              <Grid item>
                 {loading ? (
                   <Box display="flex" justifyContent="center" my={4}>
                     <CircularProgress />
@@ -354,7 +396,7 @@ export const Accuracy = () => {
                         boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                       }}
                     >
-                      <Table aria-label="Accuracy Data">
+                      <Table aria-label="Error Data">
                         <TableHead>
                           <TableRow sx={{ bgcolor: "grey.50" }}>
                             <TableCell sx={{ fontWeight: "bold" }}>
@@ -370,7 +412,7 @@ export const Accuracy = () => {
                               align="right"
                               sx={{ fontWeight: "bold" }}
                             >
-                              Accuracy
+                              Temp Error (%)
                             </TableCell>
                             <TableCell
                               align="right"
@@ -382,7 +424,7 @@ export const Accuracy = () => {
                               align="right"
                               sx={{ fontWeight: "bold" }}
                             >
-                              Accuracy
+                              PPM Error (%)
                             </TableCell>
                             <TableCell
                               align="right"
@@ -394,7 +436,7 @@ export const Accuracy = () => {
                               align="right"
                               sx={{ fontWeight: "bold" }}
                             >
-                              Accuracy
+                              pH Error (%)
                             </TableCell>
                             <TableCell
                               align="right"
@@ -429,11 +471,17 @@ export const Accuracy = () => {
                                 <Box
                                   sx={{
                                     display: "inline-block",
-                                    bgcolor: `${getAccuracyColor(
-                                      row.watertemp_accuracy
+                                    bgcolor: `${getErrorColor(
+                                      calculateError(
+                                        parseFloat(row.avg_watertemp),
+                                        targetValues.watertemp
+                                      )
                                     )}20`,
-                                    color: getAccuracyColor(
-                                      row.watertemp_accuracy
+                                    color: getErrorColor(
+                                      calculateError(
+                                        parseFloat(row.avg_watertemp),
+                                        targetValues.watertemp
+                                      )
                                     ),
                                     px: 1.5,
                                     py: 0.5,
@@ -442,7 +490,11 @@ export const Accuracy = () => {
                                     fontSize: "0.875rem",
                                   }}
                                 >
-                                  {row.watertemp_accuracy}%
+                                  {calculateError(
+                                    parseFloat(row.avg_watertemp),
+                                    targetValues.watertemp
+                                  )}
+                                  %
                                 </Box>
                               </TableCell>
                               <TableCell align="right">
@@ -452,11 +504,17 @@ export const Accuracy = () => {
                                 <Box
                                   sx={{
                                     display: "inline-block",
-                                    bgcolor: `${getAccuracyColor(
-                                      row.waterppm_accuracy
+                                    bgcolor: `${getErrorColor(
+                                      calculateError(
+                                        parseFloat(row.avg_waterppm),
+                                        targetValues.waterppm
+                                      )
                                     )}20`,
-                                    color: getAccuracyColor(
-                                      row.waterppm_accuracy
+                                    color: getErrorColor(
+                                      calculateError(
+                                        parseFloat(row.avg_waterppm),
+                                        targetValues.waterppm
+                                      )
                                     ),
                                     px: 1.5,
                                     py: 0.5,
@@ -465,7 +523,11 @@ export const Accuracy = () => {
                                     fontSize: "0.875rem",
                                   }}
                                 >
-                                  {row.waterppm_accuracy}%
+                                  {calculateError(
+                                    parseFloat(row.avg_waterppm),
+                                    targetValues.waterppm
+                                  )}
+                                  %
                                 </Box>
                               </TableCell>
                               <TableCell align="right">
@@ -475,11 +537,17 @@ export const Accuracy = () => {
                                 <Box
                                   sx={{
                                     display: "inline-block",
-                                    bgcolor: `${getAccuracyColor(
-                                      row.waterph_accuracy
+                                    bgcolor: `${getErrorColor(
+                                      calculateError(
+                                        parseFloat(row.avg_waterph),
+                                        targetValues.waterph
+                                      )
                                     )}20`,
-                                    color: getAccuracyColor(
-                                      row.waterph_accuracy
+                                    color: getErrorColor(
+                                      calculateError(
+                                        parseFloat(row.avg_waterph),
+                                        targetValues.waterph
+                                      )
                                     ),
                                     px: 1.5,
                                     py: 0.5,
@@ -488,7 +556,11 @@ export const Accuracy = () => {
                                     fontSize: "0.875rem",
                                   }}
                                 >
-                                  {row.waterph_accuracy}%
+                                  {calculateError(
+                                    parseFloat(row.avg_waterph),
+                                    targetValues.waterph
+                                  )}
+                                  %
                                 </Box>
                               </TableCell>
                               <TableCell align="right">
@@ -503,10 +575,10 @@ export const Accuracy = () => {
                       </Table>
                     </TableContainer>
 
-                    {accuracyData.length > 0 && (
+                    {errorData.length > 0 && (
                       <Box display="flex" justifyContent="center" mt={4}>
                         <Pagination
-                          count={Math.ceil(accuracyData.length / rowsPerPage)}
+                          count={Math.ceil(errorData.length / rowsPerPage)}
                           page={page}
                           onChange={handleChangePage}
                           color="secondary-emphasis"
@@ -520,138 +592,111 @@ export const Accuracy = () => {
           </Grid>
           {/* section kanan */}
           <Grid item xs={12} md={6} lg={3}>
-            <Card sx={{ mb: 4, p: 2 }}>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold" }}>
-                Accuracy Summary
+            <Card
+              sx={{
+                mb: 4,
+                p: 2,
+                background: "linear-gradient(135deg, #f6f8f9 0%, #e5ebee 100%)",
+                borderRadius: 3,
+              }}
+            >
+              <Typography
+                variant="h5"
+                gutterBottom
+                sx={{
+                  fontWeight: "bold",
+                  color: "primary.main",
+                  textAlign: "center",
+                  mb: 3,
+                }}
+              >
+                System Performance Analysis
               </Typography>
 
               {loading ? (
                 <Box display="flex" justifyContent="center" my={4}>
                   <CircularProgress />
                 </Box>
-              ) : accuracyData.length > 0 ? (
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <AccuracyCard
-                      accuracy={calculateAverageAccuracy(accuracyData)}
-                    >
-                      <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                          Overall Accuracy
-                        </Typography>
-                        <Typography
-                          variant="h4"
-                          sx={{
-                            color: getAccuracyColor(
-                              calculateAverageAccuracy(accuracyData)
-                            ),
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {calculateAverageAccuracy(accuracyData)}%
-                        </Typography>
-                      </CardContent>
-                    </AccuracyCard>
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <AccuracyCard
-                      accuracy={calculateParameterAverage(
-                        accuracyData,
-                        "watertemp_accuracy"
-                      )}
-                    >
-                      <CardContent>
-                        <Typography variant="subtitle1" gutterBottom>
-                          Temperature Accuracy
-                        </Typography>
-                        <Typography
-                          variant="h5"
-                          sx={{
-                            color: getAccuracyColor(
-                              calculateParameterAverage(
-                                accuracyData,
-                                "watertemp_accuracy"
-                              )
-                            ),
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {calculateParameterAverage(
-                            accuracyData,
-                            "watertemp_accuracy"
-                          )}
-                          %
-                        </Typography>
-                      </CardContent>
-                    </AccuracyCard>
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <AccuracyCard
-                      accuracy={calculateParameterAverage(
-                        accuracyData,
-                        "waterppm_accuracy"
-                      )}
-                    >
-                      <CardContent>
-                        <Typography variant="subtitle1" gutterBottom>
-                          PPM Accuracy
-                        </Typography>
-                        <Typography
-                          variant="h5"
-                          sx={{
-                            color: getAccuracyColor(
-                              calculateParameterAverage(
-                                accuracyData,
-                                "waterppm_accuracy"
-                              )
-                            ),
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {calculateParameterAverage(
-                            accuracyData,
-                            "waterppm_accuracy"
-                          )}
-                          %
-                        </Typography>
-                      </CardContent>
-                    </AccuracyCard>
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <AccuracyCard
-                      accuracy={calculateParameterAverage(
-                        accuracyData,
-                        "waterph_accuracy"
-                      )}
-                    >
-                      <CardContent>
-                        <Typography variant="subtitle1" gutterBottom>
-                          pH Accuracy
-                        </Typography>
-                        <Typography
-                          variant="h5"
-                          sx={{
-                            color: getAccuracyColor(
-                              calculateParameterAverage(
-                                accuracyData,
-                                "waterph_accuracy"
-                              )
-                            ),
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {calculateParameterAverage(
-                            accuracyData,
-                            "waterph_accuracy"
-                          )}
-                          %
-                        </Typography>
-                      </CardContent>
-                    </AccuracyCard>
-                  </Grid>
+              ) : errorData.length > 0 ? (
+                <Grid container spacing={3}>
+                  {[
+                    {
+                      label: "Overall Performance",
+                      value: calculateAverageError(errorData),
+                      description: "System's comprehensive error rate",
+                      icon: (value) => getErrorIcon(value),
+                    },
+                    {
+                      label: "Temperature Error",
+                      value: calculateParameterAverage(
+                        errorData,
+                        "watertemp_error"
+                      ),
+                      description: "Water temperature deviation",
+                      icon: (value) => getErrorIcon(value),
+                    },
+                    {
+                      label: "PPM Error",
+                      value: calculateParameterAverage(
+                        errorData,
+                        "waterppm_error"
+                      ),
+                      description: "Nutrient concentration variance",
+                      icon: (value) => getErrorIcon(value),
+                    },
+                    {
+                      label: "pH Error",
+                      value: calculateParameterAverage(
+                        errorData,
+                        "waterph_error"
+                      ),
+                      description: "pH level deviation",
+                      icon: (value) => getErrorIcon(value),
+                    },
+                  ].map((metric, index) => (
+                    <Grid item xs={12} key={index}>
+                      <AccuracyCard accuracy={metric.value}>
+                        <CardContent>
+                          <Box
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="space-between"
+                          >
+                            <Box flex={1}>
+                              <Typography
+                                variant="subtitle1"
+                                sx={{
+                                  fontWeight: "bold",
+                                  color: "text.secondary",
+                                }}
+                              >
+                                {metric.label}
+                              </Typography>
+                              <Typography
+                                variant="h4"
+                                sx={{
+                                  color: getErrorColor(metric.value),
+                                  fontWeight: "bold",
+                                }}
+                              >
+                                {metric.value}%
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ mt: 1 }}
+                              >
+                                {metric.description}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ ml: 2 }}>
+                              {metric.icon(metric.value)}
+                            </Box>
+                          </Box>
+                        </CardContent>
+                      </AccuracyCard>
+                    </Grid>
+                  ))}
                 </Grid>
               ) : (
                 <Typography
@@ -659,7 +704,7 @@ export const Accuracy = () => {
                   color="text.secondary"
                   sx={{ textAlign: "center", py: 4 }}
                 >
-                  Select a profile and date range to view accuracy metrics
+                  Select a profile and date range to view performance metrics
                 </Typography>
               )}
             </Card>
