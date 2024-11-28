@@ -1,8 +1,7 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
-import { styled } from "@mui/material/styles";
-import { Typography, Box, Card, CardContent, Alert } from "@mui/material";
+import { StyledCard, MetricValue, CenteredAlert } from "../../styles/styledComponents";
+import { Typography, Box, CardContent} from "@mui/material";
 import {
   AlertTriangle,
   CheckCircle,
@@ -10,34 +9,6 @@ import {
   AlertOctagon,
 } from "lucide-react";
 import { useSetpoint } from "./hooks/useSetpoint";
-
-// Styled Components
-const StyledCard = styled(Card)(({ theme }) => ({
-  transition: "all 0.3s",
-  "&:hover": {
-    transform: "scale(1.04)",
-    boxShadow: theme.shadows[8],
-  },
-}));
-
-const MetricValue = styled(Typography)(({ theme }) => ({
-  fontFamily: "'Roboto Mono', monospace",
-  fontSize: "3.3rem",
-  fontWeight: "bold",
-  textAlign: "center",
-  marginTop: theme.spacing(2),
-}));
-
-const CenteredAlert = styled(Alert)(({ theme }) => ({
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  textAlign: "center",
-  "& .MuiAlert-message": {
-    flex: "none",
-    width: "100%",
-  },
-}));
 
 const getStatusIcon = (iconType, color) => {
   switch (iconType) {
@@ -81,7 +52,6 @@ const MetricCard = ({ value, unit, label, color, metricKey, setpointData }) => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            mb: 2,
           }}
         >
           {status && getStatusIcon(status.icon, status.color)}

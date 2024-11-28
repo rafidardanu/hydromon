@@ -1,63 +1,19 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { setAuthToken, removeAuthToken, isTokenExpired } from "../utils/auth";
+import { Box, TextField, Typography, Alert, Container, ThemeProvider} from "@mui/material";
 import {
-  Box,
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  Alert,
-  Container,
-  styled,
-} from "@mui/material";
+  registerTheme,
+  LoginBox,
+  LoginCard,
+  LoginCardContent,
+  LoginButton,
+  LoginLink,
+} from "../styles/styledComponents";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-// Custom styled components
-const LoginBox = styled(Box)({
-  minHeight: "100vh",
-  display: "flex",
-  alignItems: "center",
-  background: "linear-gradient(135deg, #4CAF50, #45a049)",
-  padding: "20px",
-});
-
-const StyledCard = styled(Card)({
-  borderRadius: "15px",
-  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-  width: "100%",
-  maxWidth: "500px",
-  margin: "0 auto",
-});
-
-const StyledCardContent = styled(CardContent)({
-  padding: "3rem !important",
-  "@media (max-width: 600px)": {
-    padding: "2rem !important",
-  },
-});
-
-const StyledButton = styled(Button)({
-  backgroundColor: "#4CAF50",
-  "&:hover": {
-    backgroundColor: "#45a049",
-  },
-  padding: "10px 0",
-  marginTop: "16px",
-  marginBottom: "16px",
-});
-
-const StyledLink = styled(Link)({
-  color: "#4CAF50",
-  textDecoration: "none",
-  "&:hover": {
-    color: "#45a049",
-  },
-});
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -110,101 +66,103 @@ const Login = () => {
   };
 
   return (
-    <LoginBox>
-      <Container maxWidth="sm">
-        <StyledCard>
-          <StyledCardContent>
-            <Box
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              mb={4}
-            >
+    <ThemeProvider theme={registerTheme}>
+      <LoginBox>
+        <Container maxWidth="sm">
+          <LoginCard>
+            <LoginCardContent>
               <Box
-                component="img"
-                src="/icon.svg"
-                alt="Taman Herbal Lawu"
-                sx={{
-                  width: "80px",
-                  height: "auto",
-                  mb: 2,
-                }}
-              />
-              <Typography
-                variant="h4"
-                component="h2"
-                sx={{
-                  fontWeight: "bold",
-                  color: "#4CAF50",
-                }}
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                mb={4}
               >
-                Taman Herbal Lawu
-              </Typography>
-            </Box>
-
-            <Box component="form" onSubmit={handleLogin}>
-              <TextField
-                fullWidth
-                id="username"
-                label="Username"
-                variant="outlined"
-                margin="normal"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                sx={{
-                  mb: 2,
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "8px",
-                  },
-                }}
-              />
-
-              <TextField
-                fullWidth
-                id="password"
-                label="Password"
-                type="password"
-                variant="outlined"
-                margin="normal"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                sx={{
-                  mb: 2,
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "8px",
-                  },
-                }}
-              />
-
-              {error && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  {error}
-                </Alert>
-              )}
-
-              <StyledButton
-                type="submit"
-                fullWidth
-                variant="contained"
-                size="large"
-              >
-                Login
-              </StyledButton>
-
-              <Box textAlign="center">
-                <Typography variant="body2" color="text.secondary">
-                  Forgot password or need an account?
-                  <br />
-                  <StyledLink to="/contact-admin">Contact admin</StyledLink>
+                <Box
+                  component="img"
+                  src="/icon.svg"
+                  alt="Taman Herbal Lawu"
+                  sx={{
+                    width: "80px",
+                    height: "auto",
+                    mb: 2,
+                  }}
+                />
+                <Typography
+                  variant="h4"
+                  component="h2"
+                  sx={{
+                    fontWeight: "bold",
+                    color: "#4CAF50",
+                  }}
+                >
+                  Taman Herbal Lawu
                 </Typography>
               </Box>
-            </Box>
-          </StyledCardContent>
-        </StyledCard>
-      </Container>
-    </LoginBox>
+
+              <Box component="form" onSubmit={handleLogin}>
+                <TextField
+                  fullWidth
+                  id="username"
+                  label="Username"
+                  variant="outlined"
+                  margin="normal"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                  sx={{
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "8px",
+                    },
+                  }}
+                />
+
+                <TextField
+                  fullWidth
+                  id="password"
+                  label="Password"
+                  type="password"
+                  variant="outlined"
+                  margin="normal"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  sx={{
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "8px",
+                    },
+                  }}
+                />
+
+                {error && (
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    {error}
+                  </Alert>
+                )}
+
+                <LoginButton
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  size="large"
+                >
+                  Login
+                </LoginButton>
+
+                <Box textAlign="center">
+                  <Typography variant="body2" color="text.secondary">
+                    Forgot password or need an account?
+                    <br />
+                    <LoginLink href="/contact-admin">Contact admin</LoginLink>
+                  </Typography>
+                </Box>
+              </Box>
+            </LoginCardContent>
+          </LoginCard>
+        </Container>
+      </LoginBox>
+    </ThemeProvider>
   );
 };
 

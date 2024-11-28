@@ -2,46 +2,10 @@
 import { Link } from "react-router-dom";
 import {
   Box,
-  Card,
-  CardContent,
-  Button,
   Typography,
   Container,
-  styled,
 } from "@mui/material";
-
-// Custom styled components
-const ContactAdminBox = styled(Box)({
-  minHeight: "100vh",
-  display: "flex",
-  alignItems: "center",
-  background: "linear-gradient(135deg, #4CAF50, #45a049)",
-  padding: "20px",
-});
-
-const StyledCard = styled(Card)({
-  borderRadius: "15px",
-  boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-  width: "100%",
-  maxWidth: "500px",
-  margin: "0 auto",
-});
-
-const StyledCardContent = styled(CardContent)({
-  padding: "3rem !important",
-  "@media (max-width: 600px)": {
-    padding: "2rem !important",
-  },
-});
-
-const StyledButton = styled(Button)({
-  backgroundColor: "#4CAF50",
-  "&:hover": {
-    backgroundColor: "#45a049",
-  },
-  padding: "10px 0",
-  marginTop: "16px",
-});
+import { ContactAdminBox, StyledCard, StyledCardContent, StyledButton } from "../styles/styledComponents";
 
 const ContactAdmin = () => {
   return (

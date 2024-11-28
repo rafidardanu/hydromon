@@ -1,19 +1,10 @@
 /* eslint-disable react/prop-types */
-import { Card, CardContent, Typography, Grid } from "@mui/material";
-import { styled } from "@mui/material/styles";
-import { BeakerIcon } from "lucide-react";
+import { CardContent, Typography, Grid } from "@mui/material";
+import { StyledCard } from "../../styles/styledComponents";
+import { BeakerIcon, FlaskConical } from "lucide-react";
 import ActuatorCard from "./ActuatorCard";
 
-// Styled Components
-const StyledCard = styled(Card)(() => ({
-  transition: "all 0.3s",
-  "&:hover": {
-    transform: "scale(1.05)",
-    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-  },
-}));
-
-const ChemicalIndicator = ({ actuatorStatus }) => (
+const ChemicalIndicator = ({ actuatorData }) => (
   <StyledCard>
     <CardContent>
       <Typography variant="h6" gutterBottom sx={{ color: "text.primary" }}>
@@ -34,13 +25,13 @@ const ChemicalIndicator = ({ actuatorStatus }) => (
           {
             key: "actuator_nutrisi",
             label: "Nutrient Pump",
-            icon: BeakerIcon,
+            icon: FlaskConical,
           },
         ].map(({ key, label, icon }) => (
           <Grid item xs={12} key={key}>
             <ActuatorCard
               label={label}
-              status={actuatorStatus[key]}
+              status={actuatorData[key]}
               icon={icon}
             />
           </Grid>

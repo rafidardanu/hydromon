@@ -5,56 +5,26 @@ import axios from "axios";
 import {
   Box,
   Container,
-  Paper,
   Typography,
   TextField,
   MenuItem,
-  Button,
   Alert,
   Grid,
-  Avatar,
   IconButton,
   InputAdornment,
+  ThemeProvider,
+  Avatar,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
 import Sidebar from "../components/Sidebar";
 import { isTokenExpired, removeAuthToken } from "../utils/auth";
+import {
+  registerTheme,
+  RegisterCard,
+  RegisterButton,
+} from "../styles/styledComponents";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-// Custom theme with green primary color
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: "#4CAF50",
-      dark: "#45a049",
-    },
-  },
-  components: {
-    MuiTextField: {
-      defaultProps: {
-        variant: "outlined",
-        fullWidth: true,
-      },
-    },
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: "8px",
-          padding: "12px",
-        },
-      },
-    },
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          borderRadius: "15px",
-        },
-      },
-    },
-  },
-});
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -137,7 +107,7 @@ const Register = () => {
   };
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={registerTheme}>
       <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f8f9fa" }}>
         <Sidebar
           activePage={activePage}
@@ -147,7 +117,7 @@ const Register = () => {
 
         <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
           <Container maxWidth="md" sx={{ py: 5 }}>
-            <Paper elevation={3} sx={{ p: { xs: 3, md: 5 } }}>
+            <RegisterCard elevation={3}>
               <Box
                 component="form"
                 onSubmit={handleRegister}
@@ -161,7 +131,10 @@ const Register = () => {
                 <Avatar
                   src="/icon.svg"
                   alt="Taman Herbal Lawu"
-                  sx={{ width: 105, height: 79 }}
+                  sx={{
+                    width: 105,
+                    height: 79,
+                  }}
                 />
 
                 <Typography
@@ -278,21 +251,16 @@ const Register = () => {
                   </Alert>
                 )}
 
-                <Button
+                <RegisterButton
                   type="submit"
                   variant="contained"
                   fullWidth
                   size="large"
-                  sx={{
-                    mt: 2,
-                    textTransform: "none",
-                    fontSize: "1rem",
-                  }}
                 >
                   Register
-                </Button>
+                </RegisterButton>
               </Box>
-            </Paper>
+            </RegisterCard>
           </Container>
         </Box>
       </Box>

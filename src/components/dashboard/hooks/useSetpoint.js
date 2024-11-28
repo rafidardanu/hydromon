@@ -1,19 +1,4 @@
-export const THRESHOLD_OFFSETS = {
-  watertemp: { normal: 2, max: 4 },
-  waterph: { normal: 0.2, max: 0.4 },
-  waterppm: { normal: 50, max: 100 },
-  airtemp: { normal: 3, max: 6 },
-};
-
-// Manual thresholds untuk air humidity
-const AIR_HUMIDITY_THRESHOLDS = {
-  min: 60,
-  normal: {
-    min: 65,
-    max: 75,
-  },
-  max: 80,
-};
+import { THRESHOLD_OFFSETS, AIR_HUMIDITY_THRESHOLDS } from "../../../utils/constants";
 
 export const useSetpoint = (value, metricKey, setpointData) => {
   const getThresholds = () => {
@@ -22,7 +7,6 @@ export const useSetpoint = (value, metricKey, setpointData) => {
     const activeSetpoint = setpointData.find((item) => item.status === 1);
     if (!activeSetpoint) return null;
 
-    // Khusus untuk airhum, gunakan threshold manual
     if (metricKey === "airhum") {
       return {
         ...AIR_HUMIDITY_THRESHOLDS,
@@ -33,7 +17,6 @@ export const useSetpoint = (value, metricKey, setpointData) => {
       };
     }
 
-    // Untuk airtemp, gunakan watertemp sebagai referensi
     const setpointValue =
       metricKey === "airtemp"
         ? activeSetpoint["watertemp"]

@@ -1,34 +1,39 @@
 /* eslint-disable react/prop-types */
-import { Card, CardContent, Typography } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { CardContent, Typography } from "@mui/material";
+import { StyledCard } from "../../styles/styledComponents";
 
-// Styled Components
-  const StyledCard = styled(Card)(({ theme }) => ({
-    transition: "all 0.3s",
-    "&:hover": {
-      transform: "scale(1.04)",
-      boxShadow: theme.shadows[8],
-    },
-  }));
-
-const LastUpdate = ({ lastUpdate }) => {
+const LastUpdate = ({ lastMonitoringUpdate, lastActuatorUpdate }) => {
   const currentTime = new Date().toLocaleTimeString();
 
   return (
     <StyledCard>
       <CardContent>
         <Typography variant="h6" gutterBottom sx={{ color: "text.primary" }}>
-          Last Update MQTT
+          Last Update Monitoring
         </Typography>
-        <Typography variant="body1" sx={{ mt: 2 }}>
-          {lastUpdate
-            ? new Date(lastUpdate).toLocaleString()
-            : "No updates yet"}
+        <Typography variant="body1">
+          {lastMonitoringUpdate
+            ? new Date(lastMonitoringUpdate).toLocaleString()
+            : "No monitoring updates yet"}
         </Typography>
+        
         <Typography
           variant="h6"
           gutterBottom
-          sx={{ color: "text.primary", mt: 2 }}
+          sx={{ color: "text.primary", mt: 3 }}
+        >
+          Last Update Actuator
+        </Typography>
+        <Typography variant="body1">
+          {lastActuatorUpdate
+            ? new Date(lastActuatorUpdate).toLocaleString()
+            : "No actuator updates yet"}
+        </Typography>
+
+        <Typography
+          variant="h6"
+          gutterBottom
+          sx={{ color: "text.primary", mt: 3 }}
         >
           Current Time
         </Typography>

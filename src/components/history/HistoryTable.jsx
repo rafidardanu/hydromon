@@ -9,30 +9,8 @@ import {
   Paper,
   Box,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { StyledTableCell, StyledTableRow } from "../../styles/styledComponents";
 import { format } from "date-fns";
-
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  fontWeight: "bold",
-  background: "#4CAF50",
-  color: theme.palette.common.white,
-  fontSize: 16,
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  "&:nth-of-type(odd)": {
-    backgroundColor: theme.palette.action.hover,
-  },
-  "&:last-child td, &:last-child th": {
-    border: 0,
-  },
-  transition: "all 0.3s",
-  "&:hover": {
-    backgroundColor: theme.palette.action.selected,
-    transform: "scale(1.01)",
-    boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-  },
-}));
 
 const HistoryTable = ({
   monitoringData,
@@ -43,7 +21,17 @@ const HistoryTable = ({
   calculateError,
 }) => {
   const calculateErrorWrapper = (measured, target) => {
-    return selectedProfile ? `${calculateError(measured, target)}%` : "N/A";
+    if (measured === null || measured === undefined || !selectedProfile) {
+      return "N/A";
+    }
+    return `${calculateError(measured, target)}%`;
+  };
+
+  const formatNumber = (value) => {
+    if (value === null || value === undefined) {
+      return "N/A";
+    }
+    return value.toFixed(2);
   };
 
   return (
@@ -63,7 +51,7 @@ const HistoryTable = ({
                   component="span"
                   sx={{ fontSize: "0.8em", display: "block" }}
                 >
-                  Target: {targetValues.watertemp}°C
+                  Target: {formatNumber(targetValues.watertemp)}°C
                 </Box>
               )}
             </StyledTableCell>
@@ -75,7 +63,7 @@ const HistoryTable = ({
                   component="span"
                   sx={{ fontSize: "0.8em", display: "block" }}
                 >
-                  Target: {targetValues.waterph}
+                  Target: {formatNumber(targetValues.waterph)}
                 </Box>
               )}
             </StyledTableCell>
@@ -87,7 +75,7 @@ const HistoryTable = ({
                   component="span"
                   sx={{ fontSize: "0.8em", display: "block" }}
                 >
-                  Target: {targetValues.waterppm}
+                  Target: {formatNumber(targetValues.waterppm)}
                 </Box>
               )}
             </StyledTableCell>
@@ -102,9 +90,11 @@ const HistoryTable = ({
             .map((item, index) => (
               <StyledTableRow key={index}>
                 <TableCell>
-                  {format(new Date(item.timestamp), "yyyy-MM-dd HH:mm:ss")}
+                  {item.timestamp
+                    ? format(new Date(item.timestamp), "yyyy-MM-dd HH:mm:ss")
+                    : "N/A"}
                 </TableCell>
-                <TableCell>{item.watertemp.toFixed(2)}</TableCell>
+                <TableCell>{formatNumber(item.watertemp)}</TableCell>
                 {selectedProfile && (
                   <TableCell>
                     {calculateErrorWrapper(
@@ -113,13 +103,13 @@ const HistoryTable = ({
                     )}
                   </TableCell>
                 )}
-                <TableCell>{item.waterph.toFixed(2)}</TableCell>
+                <TableCell>{formatNumber(item.waterph)}</TableCell>
                 {selectedProfile && (
                   <TableCell>
                     {calculateErrorWrapper(item.waterph, targetValues.waterph)}
                   </TableCell>
                 )}
-                <TableCell>{item.waterppm.toFixed(2)}</TableCell>
+                <TableCell>{formatNumber(item.waterppm)}</TableCell>
                 {selectedProfile && (
                   <TableCell>
                     {calculateErrorWrapper(
@@ -128,8 +118,8 @@ const HistoryTable = ({
                     )}
                   </TableCell>
                 )}
-                <TableCell>{item.airtemp.toFixed(2)}</TableCell>
-                <TableCell>{item.airhum.toFixed(2)}</TableCell>
+                <TableCell>{formatNumber(item.airtemp)}</TableCell>
+                <TableCell>{formatNumber(item.airhum)}</TableCell>
               </StyledTableRow>
             ))}
         </TableBody>

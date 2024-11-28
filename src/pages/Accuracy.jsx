@@ -25,35 +25,12 @@ import {
   Paper,
   Pagination,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import {DataSetpoint, AccuracyCard} from "../styles/styledComponents"
 import Sidebar from "../components/Sidebar";
 import { isTokenExpired, removeAuthToken } from "../utils/auth";
 import { CHART_COLORS, ACCURACY_COLORS } from "../utils/constants";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-const DataSetpoint = styled(Card)(({ theme, bgcolor }) => ({
-  backgroundColor: bgcolor,
-  color: theme.palette.common.white,
-  transition: "all 0.3s ease",
-  "&:hover": {
-    transform: "translateY(-5px)",
-    boxShadow: theme.shadows[8],
-  },
-}));
-
-const AccuracyCard = styled(Card)(({ theme, error }) => {
-  const color = getErrorColor(error);
-  return {
-    backgroundColor: `${color}10`,
-    borderLeft: `4px solid ${color}`,
-    transition: "all 0.3s ease",
-    "&:hover": {
-      transform: "translateY(-5px)",
-      boxShadow: theme.shadows[4],
-    },
-  };
-});
 
 const getErrorColor = (error) => {
   const value = parseFloat(error);

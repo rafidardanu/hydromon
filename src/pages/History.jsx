@@ -158,134 +158,142 @@ const History = () => {
   };
 
 const exportToCSV = () => {
-    // Get selected profile info
-    const selectedProfileData = profiles.find((p) => p.id === selectedProfile);
-    const profileName = selectedProfileData
-      ? selectedProfileData.profile
-      : "No Profile Selected";
+  const formatValue = (value) => {
+    if (value === null || value === undefined) return "N/A";
+    return value.toFixed(2);
+  };
 
-    let csvContent = "\ufeff";
+  // const calculateAverages = (data) => {
+  //   const validData = {
+  //     watertemp: data.filter((item) => item.watertemp != null),
+  //     waterph: data.filter((item) => item.waterph != null),
+  //     waterppm: data.filter((item) => item.waterppm != null),
+  //   };
 
-    // Add metadata section with proper spacing
-    csvContent += "Profile Information\n\n";
-    csvContent += `Selected Profile,${profileName}\n\n`;
+  //   return {
+  //     avgWaterTemp: validData.watertemp.length
+  //       ? validData.watertemp.reduce((sum, item) => sum + item.watertemp, 0) /
+  //         validData.watertemp.length
+  //       : 0,
+  //     avgWaterPh: validData.waterph.length
+  //       ? validData.waterph.reduce((sum, item) => sum + item.waterph, 0) /
+  //         validData.waterph.length
+  //       : 0,
+  //     avgWaterPpm: validData.waterppm.length
+  //       ? validData.waterppm.reduce((sum, item) => sum + item.waterppm, 0) /
+  //         validData.waterppm.length
+  //       : 0,
+  //   };
+  // };
 
-    if (selectedProfile) {
-      csvContent += "Target Values\n";
-      csvContent += `Water Temperature,${targetValues.watertemp} Celsius\n`;
-      csvContent += `Water pH,${targetValues.waterph}\n`;
-      csvContent += `Water PPM,${targetValues.waterppm}\n\n`;
-    }
+  const selectedProfileData = profiles.find((p) => p.id === selectedProfile);
+  const profileName = selectedProfileData?.profile || "No Profile Selected";
+  let csvContent = "\ufeff";
 
-    csvContent += "Measurement Data\n";
+  // Profile information
+  csvContent += "Profile Information\n\n";
+  csvContent += `Selected Profile,${profileName}\n\n`;
 
-    const headers = [
-      "Timestamp",
-      "Water Temperature (Celsius)",
-      selectedProfile ? "Temperature Error (%)" : null,
-      "Water pH",
-      selectedProfile ? "pH Error (%)" : null,
-      "Water PPM",
-      selectedProfile ? "PPM Error (%)" : null,
-      "Air Temperature (Celsius)",
-      "Air Humidity (%)",
+  if (selectedProfile) {
+    csvContent += "Target Values\n";
+    csvContent += `Water Temperature,${formatValue(
+      targetValues.watertemp
+    )} Celsius\n`;
+    csvContent += `Water pH,${formatValue(targetValues.waterph)}\n`;
+    csvContent += `Water PPM,${formatValue(targetValues.waterppm)}\n\n`;
+  }
+
+  // Headers
+  csvContent += "Measurement Data\n";
+  const headers = [
+    "Timestamp",
+    "Water Temperature (Celsius)",
+    selectedProfile && "Temperature Error (%)",
+    "Water pH",
+    selectedProfile && "pH Error (%)",
+    "Water PPM",
+    selectedProfile && "PPM Error (%)",
+    "Air Temperature (Celsius)",
+    "Air Humidity (%)",
+  ].filter(Boolean);
+  csvContent += headers.join(",") + "\n";
+
+  // Data rows
+  monitoringData.forEach((item) => {
+    const timestamp = item.timestamp
+      ? format(new Date(item.timestamp), "yyyy-MM-dd HH:mm:ss")
+      : "N/A";
+
+    const row = [
+      timestamp,
+      formatValue(item.watertemp),
+      selectedProfile &&
+        (item.watertemp != null
+          ? calculateError(item.watertemp, targetValues.watertemp)
+          : "N/A"),
+      formatValue(item.waterph),
+      selectedProfile &&
+        (item.waterph != null
+          ? calculateError(item.waterph, targetValues.waterph)
+          : "N/A"),
+      formatValue(item.waterppm),
+      selectedProfile &&
+        (item.waterppm != null
+          ? calculateError(item.waterppm, targetValues.waterppm)
+          : "N/A"),
+      formatValue(item.airtemp),
+      formatValue(item.airhum),
     ].filter(Boolean);
 
-    csvContent += headers.join(",") + "\n";
+    csvContent += row.join(",") + "\n";
+  });
 
-    // Process data rows
-    monitoringData.forEach((item) => {
-      const row = [
-        format(new Date(item.timestamp), "yyyy-MM-dd HH:mm:ss"),
+  // // Summary statistics
+  // if (selectedProfile) {
+  //   const averages = calculateAverages(monitoringData);
 
-        item.watertemp.toFixed(2),
+  //   csvContent += "\nSummary Statistics\n";
+  //   csvContent += `Average Water Temperature,${formatValue(
+  //     averages.avgWaterTemp
+  //   )} Celsius,Error,${
+  //     averages.avgWaterTemp
+  //       ? calculateError(averages.avgWaterTemp, targetValues.watertemp)
+  //       : "N/A"
+  //   }%\n`;
+  //   csvContent += `Average Water pH,${formatValue(averages.avgWaterPh)},Error,${
+  //     averages.avgWaterPh
+  //       ? calculateError(averages.avgWaterPh, targetValues.waterph)
+  //       : "N/A"
+  //   }%\n`;
+  //   csvContent += `Average Water PPM,${formatValue(
+  //     averages.avgWaterPpm
+  //   )},Error,${
+  //     averages.avgWaterPpm
+  //       ? calculateError(averages.avgWaterPpm, targetValues.waterppm)
+  //       : "N/A"
+  //   }%\n\n`;
 
-        selectedProfile
-          ? calculateError(item.watertemp, targetValues.watertemp)
-          : null,
+  //   if (startDate && endDate) {
+  //     csvContent += `Date Range,${startDate} to ${endDate}\n`;
+  //   }
+  // }
 
-        item.waterph.toFixed(2),
+  // Download
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const timestamp = format(new Date(), "yyyyMMdd_HHmmss");
+  const filename = `monitoring_data_${
+    selectedProfile ? profileName.replace(/\s+/g, "_") + "_" : ""
+  }${timestamp}.csv`;
 
-        selectedProfile
-          ? calculateError(item.waterph, targetValues.waterph)
-          : null,
-
-        item.waterppm.toFixed(2),
-
-        selectedProfile
-          ? calculateError(item.waterppm, targetValues.waterppm)
-          : null,
-
-        item.airtemp.toFixed(2),
-
-        item.airhum.toFixed(2),
-      ].filter(Boolean);
-
-      csvContent += row.join(",") + "\n";
-    });
-
-    // if (selectedProfile) {
-    //   csvContent += "\nSummary Statistics\n";
-
-    //   // Calculate averages
-    //   const avgWaterTemp =
-    //     monitoringData.reduce((sum, item) => sum + item.watertemp, 0) /
-    //     monitoringData.length;
-    //   const avgWaterPh =
-    //     monitoringData.reduce((sum, item) => sum + item.waterph, 0) /
-    //     monitoringData.length;
-    //   const avgWaterPpm =
-    //     monitoringData.reduce((sum, item) => sum + item.waterppm, 0) /
-    //     monitoringData.length;
-
-    //   // Calculate errors
-    //   const avgWaterTempError = calculateError(
-    //     avgWaterTemp,
-    //     targetValues.watertemp
-    //   );
-    //   const avgWaterPhError = calculateError(avgWaterPh, targetValues.waterph);
-    //   const avgWaterPpmError = calculateError(
-    //     avgWaterPpm,
-    //     targetValues.waterppm
-    //   );
-
-    //   // Add formatted averages and errors
-    //   csvContent += `Average Water Temperature,${avgWaterTemp.toFixed(
-    //     2
-    //   )} Celsius,Error,${avgWaterTempError}%\n`;
-    //   csvContent += `Average Water pH,${avgWaterPh.toFixed(
-    //     2
-    //   )},Error,${avgWaterPhError}%\n`;
-    //   csvContent += `Average Water PPM,${avgWaterPpm.toFixed(
-    //     2
-    //   )},Error,${avgWaterPpmError}%\n\n`;
-
-    //   // Add date range if filtering is active
-    //   if (startDate && endDate) {
-    //     csvContent += `Date Range,${startDate} to ${endDate}\n`;
-    //   }
-    // }
-
-    // Create and trigger download with proper encoding
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
-    const link = document.createElement("a");
-
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      const timestamp = format(new Date(), "yyyyMMdd_HHmmss");
-      const filename = selectedProfile
-        ? `monitoring_data_${profileName.replace(/\s+/g, "_")}_${timestamp}.csv`
-        : `monitoring_data_${timestamp}.csv`;
-
-      link.setAttribute("href", url);
-      link.setAttribute("download", filename);
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    }
-  };
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
   return (
     <div className="dashboard d-flex">

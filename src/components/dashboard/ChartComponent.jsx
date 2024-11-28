@@ -29,7 +29,7 @@ const ChartComponent = ({ data, title, selectedChart }) => {
   const chartLines = getChartLines();
 
   return (
-    <Paper elevation={6} sx={{ borderRadius: 2, p: 3, position: "relative" }}>
+    <Paper elevation={6} sx={{ borderRadius: 2, p: 2, position: "relative" }}>
       <Typography variant="h6" gutterBottom>
         {title}
       </Typography>

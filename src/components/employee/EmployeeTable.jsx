@@ -21,29 +21,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from "@mui/icons-material";
-import { styled } from "@mui/material/styles";
-
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  fontWeight: "bold",
-  background: "#4CAF50",
-  color: theme.palette.common.white,
-  fontSize: 16,
-}));
-
-const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  "&:nth-of-type(odd)": {
-    backgroundColor: theme.palette.action.hover,
-  },
-  "&:last-child td, &:last-child th": {
-    border: 0,
-  },
-  transition: "all 0.3s",
-  "&:hover": {
-    backgroundColor: theme.palette.action.selected,
-    transform: "scale(1.01)",
-    boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-  },
-}));
+import { StyledTableCell, StyledTableRow } from "../../styles/styledComponents";
 
 const EmployeeTable = ({
   employees,

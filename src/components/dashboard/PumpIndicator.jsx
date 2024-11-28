@@ -1,19 +1,10 @@
 /* eslint-disable react/prop-types */
-import { Card, CardContent, Typography, Grid } from "@mui/material";
-import { styled } from "@mui/material/styles";
-import { Droplet, Power } from "lucide-react";
+import { CardContent, Typography, Grid } from "@mui/material";
+import { StyledCard } from "../../styles/styledComponents";
+import { Waves, Droplets } from "lucide-react";
 import ActuatorCard from "./ActuatorCard";
 
-// Styled Components
-  const StyledCard = styled(Card)(({ theme }) => ({
-    transition: "all 0.3s",
-    "&:hover": {
-      transform: "scale(1.04)",
-      boxShadow: theme.shadows[8],
-    },
-  }));
-
-const PumpIndicator = ({ actuatorStatus }) => (
+const PumpIndicator = ({ actuatorData }) => (
   <StyledCard>
     <CardContent>
       <Typography variant="h6" gutterBottom sx={{ color: "text.primary" }}>
@@ -24,23 +15,23 @@ const PumpIndicator = ({ actuatorStatus }) => (
           {
             key: "actuator_air_baku",
             label: "Raw Water Pump",
-            icon: Droplet,
+            icon: Droplets,
           },
           {
             key: "actuator_pompa_utama_1",
             label: "Main Pump 1",
-            icon: Power,
+            icon: Waves,
           },
           {
             key: "actuator_pompa_utama_2",
             label: "Main Pump 2",
-            icon: Power,
+            icon: Waves,
           },
         ].map(({ key, label, icon }) => (
           <Grid item xs={12} key={key}>
             <ActuatorCard
               label={label}
-              status={actuatorStatus[key]}
+              status={actuatorData[key]}
               icon={icon}
             />
           </Grid>

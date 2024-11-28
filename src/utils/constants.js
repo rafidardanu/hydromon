@@ -75,14 +75,32 @@ export const ACTUATOR_CONFIGS = {
 };
 
 export const STORAGE_KEYS = {
-  CARD_DATA: "mqtt_card_data",
-  ACTUATOR_STATUS: "mqtt_actuator_status",
-  LAST_UPDATE: "mqtt_last_update",
+  DATA_MONITORING: "data_monitoring",
+  DATA_ACTUATOR: "data_actuator",
+  LAST_MONITORING_UPDATE: "last_monitoring_update",
+  LAST_ACTUATOR_UPDATE: "last_actuator_update",
 };
 
 export const REFRESH_INTERVALS = {
+  PROFILE_DATA: 1000,
   DAILY_DATA: 60000,
   WEEKLY_DATA: 300000,
   DB_STATUS: 2000,
-  DEVICE_STATUS: 1000,
+  DEVICE_STATUS: 6000,
+};
+
+export const THRESHOLD_OFFSETS = {
+  watertemp: { normal: 2, max: 4 },
+  waterph: { normal: 0.2, max: 0.4 },
+  waterppm: { normal: 50, max: 100 },
+  airtemp: { normal: 3, max: 6 },
+};
+
+export const AIR_HUMIDITY_THRESHOLDS = {
+  min: 60,
+  normal: {
+    min: 65,
+    max: 75,
+  },
+  max: 80,
 };
