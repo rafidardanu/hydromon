@@ -13,6 +13,11 @@ const ChemicalIndicator = ({ actuatorData }) => (
       <Grid container spacing={2}>
         {[
           {
+            key: "actuator_nutrisi",
+            label: "Nutrient Pump",
+            icon: FlaskConical,
+          },
+          {
             key: "actuator_ph_up",
             label: "pH Up Pump",
             icon: BeakerIcon,
@@ -21,11 +26,6 @@ const ChemicalIndicator = ({ actuatorData }) => (
             key: "actuator_ph_down",
             label: "pH Down Pump",
             icon: BeakerIcon,
-          },
-          {
-            key: "actuator_nutrisi",
-            label: "Nutrient Pump",
-            icon: FlaskConical,
           },
         ].map(({ key, label, icon }) => (
           <Grid item xs={12} key={key}>

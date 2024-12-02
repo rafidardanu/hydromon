@@ -86,14 +86,14 @@ export const REFRESH_INTERVALS = {
   DAILY_DATA: 60000,
   WEEKLY_DATA: 300000,
   DB_STATUS: 2000,
-  DEVICE_STATUS: 6000,
+  DEVICE_STATUS: 10000,
 };
 
 export const THRESHOLD_OFFSETS = {
-  watertemp: { normal: 2, max: 4 },
-  waterph: { normal: 0.2, max: 0.4 },
+  watertemp: { normal: 8, max: 15 },
+  waterph: { normal: 0.5, max: 1.0 },
   waterppm: { normal: 50, max: 100 },
-  airtemp: { normal: 3, max: 6 },
+  airtemp: { normal: 8, max: 15 },
 };
 
 export const AIR_HUMIDITY_THRESHOLDS = {

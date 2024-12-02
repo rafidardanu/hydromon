@@ -13,19 +13,19 @@ const PumpIndicator = ({ actuatorData }) => (
       <Grid container spacing={2}>
         {[
           {
-            key: "actuator_air_baku",
-            label: "Raw Water Pump",
-            icon: Droplets,
-          },
-          {
             key: "actuator_pompa_utama_1",
-            label: "Main Pump 1",
+            label: "Main Pump",
             icon: Waves,
           },
           {
             key: "actuator_pompa_utama_2",
-            label: "Main Pump 2",
+            label: "Secondary Pump",
             icon: Waves,
+          },
+          {
+            key: "actuator_air_baku",
+            label: "Raw Water Pump",
+            icon: Droplets,
           },
         ].map(({ key, label, icon }) => (
           <Grid item xs={12} key={key}>
