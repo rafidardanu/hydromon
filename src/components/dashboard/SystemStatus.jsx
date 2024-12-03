@@ -14,7 +14,7 @@ const SystemStatus = ({ dbStatus, mqttStatus, deviceStatus }) => (
           <StatusCard label="Database Connection" status={dbStatus} />
         </Grid>
         <Grid item xs={12}>
-          <StatusCard label="MQTT Service" status={mqttStatus} />
+          <StatusCard label="MQTT Connection" status={mqttStatus} />
         </Grid>
         <Grid item xs={12}>
           <StatusCard label="Device Status" status={deviceStatus} />

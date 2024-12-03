@@ -166,7 +166,7 @@ const Employee = () => {
 
       <div className="content flex-grow-1 p-3">
         <Typography variant="h4" gutterBottom className="fw-bold text-success">
-          Employee Directory
+          Employee
         </Typography>
 
         <EmployeeTable

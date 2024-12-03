@@ -310,7 +310,7 @@
 //           gutterBottom
 //           className="fw-bold text-success mb-4"
 //         >
-//           Monitoring History
+//           History
 //         </Typography>
 
 //         <HistoryFilter
@@ -368,7 +368,7 @@ const History = () => {
   const [username, setUsername] = useState("");
   const [monitoringData, setMonitoringData] = useState([]);
   const [page, setPage] = useState(1);
-  const [rowsPerPage] = useState(16);
+  const [rowsPerPage] = useState(15);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [isFiltering, setIsFiltering] = useState(false);
@@ -668,7 +668,7 @@ const exportToCSV = () => {
           gutterBottom
           className="fw-bold text-success mb-4"
         >
-          Monitoring History
+          History
         </Typography>
 
         <HistoryFilter
