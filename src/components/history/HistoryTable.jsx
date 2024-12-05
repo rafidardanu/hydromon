@@ -187,9 +187,9 @@ const HistoryTable = ({
                 </Box>
               )}
             </StyledTableCell>
-            {selectedProfile && <StyledTableCell>Error (±)</StyledTableCell>}
+            {selectedProfile && <StyledTableCell>Error Water Temp (±)</StyledTableCell>}
             <StyledTableCell>
-              Water pH
+              Potential of Hydrogen
               {selectedProfile && (
                 <Box
                   component="span"
@@ -199,9 +199,9 @@ const HistoryTable = ({
                 </Box>
               )}
             </StyledTableCell>
-            {selectedProfile && <StyledTableCell>Error (±)</StyledTableCell>}
+            {selectedProfile && <StyledTableCell>Error PPM (±)</StyledTableCell>}
             <StyledTableCell>
-              Water PPM
+              Parts Per Million
               {selectedProfile && (
                 <Box
                   component="span"
@@ -211,7 +211,7 @@ const HistoryTable = ({
                 </Box>
               )}
             </StyledTableCell>
-            {selectedProfile && <StyledTableCell>Error (±)</StyledTableCell>}
+            {selectedProfile && <StyledTableCell>Error pH (±)</StyledTableCell>}
             <StyledTableCell>Air Temp (°C)</StyledTableCell>
             <StyledTableCell>Air Humidity (%)</StyledTableCell>
           </TableRow>

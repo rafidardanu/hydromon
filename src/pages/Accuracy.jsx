@@ -1395,7 +1395,7 @@ const calculateParameterAverage = (data, parameter) => {
                   mb: 3,
                 }}
               >
-                System Performance Analysis
+                System Performance Metrics
               </Typography>
 
               {loading ? (
@@ -1408,8 +1408,9 @@ const calculateParameterAverage = (data, parameter) => {
                     {
                       label: "Overall Performance",
                       value: calculateAverageError(errorData),
-                      description: "System's comprehensive error rate",
-                      isOverall: true, // Add this flag to identify the overall card
+                      description: "Comprehensive system measurement deviation",
+                      isOverall: true,
+                      unit: null,
                     },
                     {
                       label: "Temperature Error",
@@ -1417,8 +1418,10 @@ const calculateParameterAverage = (data, parameter) => {
                         errorData,
                         "watertemp_error"
                       ),
-                      description: "Water temperature deviation",
+                      description:
+                        "Average water temperature measurement deviation",
                       paramType: "temperature",
+                      unit: "°C",
                     },
                     {
                       label: "PPM Error",
@@ -1426,8 +1429,10 @@ const calculateParameterAverage = (data, parameter) => {
                         errorData,
                         "waterppm_error"
                       ),
-                      description: "Nutrient concentration variance",
+                      description:
+                        "Average nutrient concentration measurement deviation",
                       paramType: "ppm",
+                      unit: "ppm",
                     },
                     {
                       label: "pH Error",
@@ -1435,8 +1440,10 @@ const calculateParameterAverage = (data, parameter) => {
                         errorData,
                         "waterph_error"
                       ),
-                      description: "pH level deviation",
+                      description:
+                        "Average water acidity measurement deviation",
                       paramType: "ph",
+                      unit: "pH",
                     },
                   ].map((metric, index) => (
                     <Grid item xs={12} key={index}>
@@ -1475,7 +1482,7 @@ const calculateParameterAverage = (data, parameter) => {
                                     fontWeight: "bold",
                                   }}
                                 >
-                                  {metric.value}
+                                  {metric.value} {metric.unit || ""}
                                 </Typography>
                                 <Typography
                                   variant="body2"
@@ -1520,7 +1527,7 @@ const calculateParameterAverage = (data, parameter) => {
                                     fontWeight: "bold",
                                   }}
                                 >
-                                  {metric.value}
+                                  {metric.value} {metric.unit || ""}
                                 </Typography>
                                 <Typography
                                   variant="body2"
