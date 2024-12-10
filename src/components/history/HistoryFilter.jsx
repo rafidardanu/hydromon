@@ -10,6 +10,8 @@ import {
 } from "@mui/material";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 
+const today = new Date().toISOString().split("T")[0];
+
 const HistoryFilter = ({
   startDate,
   endDate,
@@ -39,6 +41,7 @@ const HistoryFilter = ({
           value={startDate}
           onChange={(e) => handleDateChange("start", e.target.value)}
           InputLabelProps={{ shrink: true }}
+          inputProps={{ max: today }}
           sx={{ minWidth: "200px" }}
         />
         <TextField
@@ -47,6 +50,10 @@ const HistoryFilter = ({
           value={endDate}
           onChange={(e) => handleDateChange("end", e.target.value)}
           InputLabelProps={{ shrink: true }}
+          inputProps={{
+            max: today,
+            min: startDate,
+          }}
           sx={{ minWidth: "200px" }}
         />
         <FormControl sx={{ minWidth: "200px" }}>

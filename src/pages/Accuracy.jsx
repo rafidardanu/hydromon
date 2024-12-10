@@ -814,6 +814,8 @@ import { CHART_COLORS, ACCURACY_COLORS } from "../utils/constants";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+const today = new Date().toISOString().split("T")[0];
+
 const ERROR_RANGES = {
   temperature: {
     high: 5, // ±0.5°C is considered low error
@@ -1076,6 +1078,7 @@ const calculateParameterAverage = (data, parameter) => {
                     InputLabelProps={{
                       shrink: true,
                     }}
+                    inputProps={{ max: today }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={3}>
@@ -1088,6 +1091,10 @@ const calculateParameterAverage = (data, parameter) => {
                     onChange={(event) => handleDateChange(event, "end")}
                     InputLabelProps={{
                       shrink: true,
+                    }}
+                    inputProps={{
+                      max: today,
+                      min: startDate,
                     }}
                   />
                 </Grid>
