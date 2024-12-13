@@ -9,10 +9,10 @@ import {
 } from "react-router-dom";
 import { isTokenExpired, removeAuthToken } from "../utils/auth";
 import Login from "../pages/Login";
-import Register from "../pages/Register";
+import AddUser from "../pages/AddUser";
 import ContactAdmin from "../pages/ContactAdmin";
 import Dashboard from "../pages/Dashboard";
-import Accuracy from "../pages/Accuracy";
+import Deviation from "../pages/Deviation";
 import History from "../pages/History";
 import Employee from "../pages/Employee";
 
@@ -67,10 +67,10 @@ const router = createBrowserRouter([
     element: <Login />,
   },
   {
-    path: "/register",
+    path: "/add-user",
     element: (
       <ProtectedRoute allowedRoles={["admin"]}>
-        <Register />
+        <AddUser />
       </ProtectedRoute>
     ),
   },
@@ -87,10 +87,10 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: "/accuracy",
+    path: "/deviation",
     element: (
       <ProtectedRoute>
-        <Accuracy />
+        <Deviation />
       </ProtectedRoute>
     ),
   },

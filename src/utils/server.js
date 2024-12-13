@@ -204,8 +204,8 @@ app.get("/api/profile", verifyToken, (req, res) => {
   });
 });
 
-// API endpoint for accuracy
-app.get("/api/accuracy", verifyToken, (req, res) => {
+// API endpoint for deviation
+app.get("/api/deviation", verifyToken, (req, res) => {
   const { startDate, endDate, profileId } = req.query;
   
   // Modified query to use the selected profile's values
@@ -240,21 +240,21 @@ app.get("/api/accuracy", verifyToken, (req, res) => {
 
   db.query(query, [profileId, profileId, profileId, startDate, endDate], (err, results) => {
     if (err) {
-      console.error("Error fetching accuracy data:", err);
-      return res.status(500).json({ error: "Error fetching accuracy data" });
+      console.error("Error fetching deviation data:", err);
+      return res.status(500).json({ error: "Error fetching deviation data" });
     }
 
-    // Calculate accuracy percentage for each measurement
+    // Calculate deviation percentage for each measurement
     const processedResults = results.map(row => {
-      const waterTempAccuracy = (100 - Math.abs((row.avg_watertemp - row.target_watertemp) / row.target_watertemp * 100)).toFixed(2);
-      const waterPpmAccuracy = (100 - Math.abs((row.avg_waterppm - row.target_waterppm) / row.target_waterppm * 100)).toFixed(2);
-      const waterPhAccuracy = (100 - Math.abs((row.avg_waterph - row.target_waterph) / row.target_waterph * 100)).toFixed(2);
+      const waterTempDeviation = (100 - Math.abs((row.avg_watertemp - row.target_watertemp) / row.target_watertemp * 100)).toFixed(2);
+      const waterPpmDeviation = (100 - Math.abs((row.avg_waterppm - row.target_waterppm) / row.target_waterppm * 100)).toFixed(2);
+      const waterPhDeviation = (100 - Math.abs((row.avg_waterph - row.target_waterph) / row.target_waterph * 100)).toFixed(2);
 
       return {
         ...row,
-        watertemp_accuracy: waterTempAccuracy,
-        waterppm_accuracy: waterPpmAccuracy,
-        waterph_accuracy: waterPhAccuracy
+        watertemp_deviation: waterTempDeviation,
+        waterppm_deviation: waterPpmDeviation,
+        waterph_deviation: waterPhDeviation,
       };
     });
 

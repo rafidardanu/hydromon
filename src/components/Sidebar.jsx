@@ -75,14 +75,14 @@ const Sidebar = ({ activePage, handleNavigation, handleLogout, username }) => {
 
   const menuItems = [
     { name: "dashboard", icon: DashboardIcon, label: "Dashboard" },
-    { name: "accuracy", icon: AccuracyIcon, label: "Accuracy" },
+    { name: "deviation", icon: AccuracyIcon, label: "Deviation" },
     { name: "history", icon: HistoryIcon, label: "History" },
     { name: "employee", icon: PeopleIcon, label: "Employee" }
   ];
 
   // Add Employee menu item for admin only
   if (user.role === "admin") {
-    menuItems.push({ name: "register", icon: RegisterIcon, label: "Register" });
+    menuItems.push({ name: "add-user", icon: RegisterIcon, label: "Add User" });
   }
 
   return (

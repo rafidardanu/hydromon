@@ -15,7 +15,7 @@ export const CHART_COLORS = {
   airhum: "#413ea0",
 };
 
-export const ACCURACY_COLORS = {
+export const DEVIATION_COLORS = {
   high: "#4CAF50",
   medium: "#FF9800",
   low: "#F44336",
@@ -103,4 +103,19 @@ export const AIR_HUMIDITY_THRESHOLDS = {
     max: 75,
   },
   max: 80,
+};
+
+export const ERROR_RANGES = {
+  temperature: {
+    high: 5,
+    medium: 10,
+  },
+  ppm: {
+    high: 50,
+    medium: 100,
+  },
+  ph: {
+    high: 0.5,
+    medium: 1.0,
+  },
 };

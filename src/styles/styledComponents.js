@@ -209,7 +209,7 @@ export const CenteredBox = styled(Box)({
     justifyContent: "center",
 });
 
-export const AccuracyCard = styled(Card)(({ theme, error }) => {
+export const DeviationCard = styled(Card)(({ theme, error }) => {
   const color = getErrorColor(error);
   return {
     backgroundColor: `${color}10`,

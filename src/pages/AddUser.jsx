@@ -26,7 +26,7 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-const Register = () => {
+const AddUser = () => {
   const [formData, setFormData] = useState({
     fullname: "",
     username: "",
@@ -268,4 +268,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default AddUser;
