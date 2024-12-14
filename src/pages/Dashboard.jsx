@@ -115,7 +115,6 @@ const useWebSocket = (
         const monitoringTimestamp = Date.now();
         lastMonitoringTimestamp.current = monitoringTimestamp;
         setStoredData(STORAGE_KEYS.LAST_MONITORING_UPDATE, monitoringTimestamp);
-      // } else if (topic === "herbalawu/aktuator") {
       } else if (topic === "herbalawu/state") {
         const processedData = Object.fromEntries(
           Object.entries(data).map(([key, value]) => [key, Number(value)])
