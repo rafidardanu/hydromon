@@ -20,8 +20,8 @@ import {
   History as HistoryIcon,
   People as PeopleIcon,
   Logout as LogoutIcon,
-  TrendingUp as AccuracyIcon,
-  PersonAdd as RegisterIcon,
+  TrendingUp as DeviationIcon,
+  PersonAdd as AddUserIcon,
   Warning as WarningIcon,
 } from "@mui/icons-material";
 import "./assets/Sidebar.css";
@@ -75,14 +75,14 @@ const Sidebar = ({ activePage, handleNavigation, handleLogout, username }) => {
 
   const menuItems = [
     { name: "dashboard", icon: DashboardIcon, label: "Dashboard" },
-    { name: "deviation", icon: AccuracyIcon, label: "Deviation" },
+    { name: "deviation", icon: DeviationIcon, label: "Deviation" },
     { name: "history", icon: HistoryIcon, label: "History" },
     { name: "employee", icon: PeopleIcon, label: "Employee" }
   ];
 
   // Add Employee menu item for admin only
   if (user.role === "admin") {
-    menuItems.push({ name: "add-user", icon: RegisterIcon, label: "Add User" });
+    menuItems.push({ name: "add-user", icon: AddUserIcon, label: "Add User" });
   }
 
   return (
